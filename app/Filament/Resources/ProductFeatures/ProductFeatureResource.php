@@ -18,6 +18,12 @@ class ProductFeatureResource extends Resource
 
     protected static string|\BackedEnum|null $navigationIcon = Heroicon::Star;
     protected static string|UnitEnum|null $navigationGroup = 'Configuración Global';
+
+    // ← Agrega esta línea
+    protected static ?string $navigationLabel = 'Beneficios de tu compra';
+
+    protected static ?string $label = 'Beneficio de tu compra';
+    protected static ?string $pluralLabel = 'Beneficios de tus compras';
     protected static ?int $navigationSort = 6;
 
     protected static ?string $recordTitleAttribute = 'name';

@@ -16,9 +16,14 @@ class CategoryTypeResource extends Resource
 {
     protected static ?string $model = CategoryType::class;
 
-    protected static string | \BackedEnum | null $navigationIcon = Heroicon::Folder;
+    protected static string|\BackedEnum|null $navigationIcon = Heroicon::Folder;
 
-    protected static string | UnitEnum | null $navigationGroup = 'Configuración Global';
+    protected static string|UnitEnum|null $navigationGroup = 'Configuración Global';
+
+    // ← Agrega esta línea
+    protected static ?string $navigationLabel = 'Tipos de Categorías';
+    protected static ?string $label = 'Tipo de Categoría';
+    protected static ?string $pluralLabel = 'Tipos de Categorías';
 
     protected static ?int $navigationSort = 1;
 
@@ -42,9 +47,9 @@ class CategoryTypeResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index'  => ListCategoryTypes::route('/'),
+            'index' => ListCategoryTypes::route('/'),
             'create' => CreateCategoryType::route('/create'),
-            'edit'   => EditCategoryType::route('/{record}/edit'),
+            'edit' => EditCategoryType::route('/{record}/edit'),
         ];
     }
 }

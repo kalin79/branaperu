@@ -25,7 +25,8 @@ class ProductForm
                             ->required()
                             ->maxLength(200)
                             ->live(onBlur: true)
-                            ->afterStateUpdated(fn ($state, callable $set) => 
+                            ->afterStateUpdated(
+                                fn($state, callable $set) =>
                                 $set('slug', Str::slug($state))
                             ),
 
@@ -46,6 +47,11 @@ class ProductForm
                             ->searchable()
                             ->preload(),
 
+                        TextInput::make('ml')
+                            ->label('Cantidad / Volumen')
+                            ->placeholder('Ej: 30ml, 5 litros, 1.5 L, 500 cc')
+                            ->helperText('Escribe la cantidad con unidad (ml, L, cc, etc.)')
+                            ->maxLength(50),
                         TextInput::make('sku')->label('SKU')->unique(ignoreRecord: true),
 
                         TextInput::make('price')->label('Precio')->numeric()->prefix('S./')->required(),
@@ -77,7 +83,7 @@ class ProductForm
 
                         Toggle::make('is_active')->label('Activo')->default(true),
                         Toggle::make('featured')->label('Destacado')->default(false),
-                        
+
                     ])
                     ->columns(2)
                     ->columnSpanFull(),

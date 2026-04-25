@@ -27,7 +27,8 @@ class Product extends Model
         'meta_description',
         'featured',
         'stock',
-        'sku'
+        'sku',
+        'ml',
     ];
 
     protected static function boot()

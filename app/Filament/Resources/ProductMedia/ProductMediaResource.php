@@ -37,6 +37,11 @@ class ProductMediaResource extends Resource
         ];
     }
 
+    public static function shouldRegisterNavigation(): bool
+    {
+        return false;   // ← Esto lo oculta del menú
+    }
+
     public static function getPages(): array
     {
         return [

@@ -147,8 +147,8 @@
                     <div class="icon-circle" style="background: #fef3c7;">
                         <x-heroicon-o-star style="width: 48px; height: 48px; color: #d97706;" />
                     </div>
-                    <h3 class="card-title">Características</h3>
-                    <p class="card-description">Atributos y especificaciones</p>
+                    <h3 class="card-title">Beneficios de tu compra</h3>
+                    <p class="card-description">Compra con confianza, rapidez y responsabilidad en cada pedido.</p>
                 </div>
 
                 <!-- Bloques de Contenido - Página Completa -->

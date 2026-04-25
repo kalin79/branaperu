@@ -16,9 +16,12 @@ class CategoryResource extends Resource
 {
     protected static ?string $model = Category::class;
 
-    protected static string | UnitEnum | null $navigationGroup = 'Catálogo de Productos';
-    protected static string | \BackedEnum | null $navigationIcon = Heroicon::Folder;
+    protected static string|UnitEnum|null $navigationGroup = 'Catálogo de Productos';
+    protected static string|\BackedEnum|null $navigationIcon = Heroicon::Folder;
     protected static ?int $navigationSort = 2;
+    protected static ?string $navigationLabel = 'Categorias';
+    protected static ?string $label = 'Categoria';
+    protected static ?string $pluralLabel = 'Categorías';
 
     protected static ?string $recordTitleAttribute = 'name';
 
@@ -40,9 +43,9 @@ class CategoryResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index'  => ListCategories::route('/'),
+            'index' => ListCategories::route('/'),
             'create' => CreateCategory::route('/create'),
-            'edit'   => EditCategory::route('/{record}/edit'),
+            'edit' => EditCategory::route('/{record}/edit'),
         ];
     }
 }
