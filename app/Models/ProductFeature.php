@@ -16,7 +16,7 @@ class ProductFeature extends Model
         'description',
         'icon',
         'is_active',
-        'order'
+        'sort_order',           // ← Cambiado
     ];
 
     protected $casts = [
@@ -26,8 +26,9 @@ class ProductFeature extends Model
     public function products()
     {
         return $this->belongsToMany(Product::class, 'product_feature')
-                    ->using(ProductFeaturePivot::class)
-                    ->withPivot('orden', 'is_active')
-                    ->withTimestamps();
+            ->using(ProductFeaturePivot::class)
+            ->withPivot('orden', 'is_active')
+            ->withTimestamps()
+            ->orderBy('product_feature.orden');
     }
 }

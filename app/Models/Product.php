@@ -12,9 +12,22 @@ class Product extends Model
     use HasFactory, SoftDeletes;
 
     protected $fillable = [
-        'category_id', 'name', 'slug', 'cover_image','subtitle', 'price', 'old_price',
-        'short_description', 'description', 'order', 'is_active',
-        'meta_title', 'meta_description', 'featured', 'stock', 'sku'
+        'category_id',
+        'name',
+        'slug',
+        'cover_image',
+        'subtitle',
+        'price',
+        'old_price',
+        'short_description',
+        'description',
+        'order',
+        'is_active',
+        'meta_title',
+        'meta_description',
+        'featured',
+        'stock',
+        'sku'
     ];
 
     protected static function boot()
@@ -52,24 +65,28 @@ class Product extends Model
     public function features()
     {
         return $this->belongsToMany(
-            ProductFeature::class, 
-            'product_feature',           // nombre de la tabla pivote
-            'product_id', 
+            ProductFeature::class,
+            'product_feature',
+            'product_id',
             'feature_id'
         )
-        ->using(ProductFeaturePivot::class)   // ← Muy importante
-        ->withPivot('orden', 'is_active')
-        ->withTimestamps()
-        ->orderBy('product_feature.orden');   // ← Especificamos tabla
+            ->using(ProductFeaturePivot::class)
+            ->withPivot('sort_order', 'is_active')           // ← cambiado
+            ->withTimestamps()
+            ->orderBy('product_feature.sort_order');         // ← cambiado
     }
 
     public function relatedProducts()
     {
-        return $this->belongsToMany(Product::class, 'product_related', 
-            'product_id', 'related_product_id')
-            ->using(ProductRelated::class)           // ← Muy importante
-            ->withPivot('order', 'is_active')
+        return $this->belongsToMany(
+            Product::class,
+            'product_related',
+            'product_id',
+            'related_product_id'
+        )
+            ->using(ProductRelated::class)
+            ->withPivot('sort_order', 'is_active')           // ← cambiado
             ->withTimestamps()
-            ->orderBy('product_related.order');      // ← Especificamos tabla
+            ->orderBy('product_related.sort_order');         // ← cambiado
     }
 }

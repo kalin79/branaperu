@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\Products\RelationManagers;
 
 use Filament\Actions\BulkActionGroup;
+use Filament\Actions\CreateAction;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
@@ -34,20 +35,26 @@ class MediaRelationManager extends RelationManager
                         'vimeo' => 'Vimeo',
                     ])
                     ->required()
-                    ->live(),
+                    ->live()
+                    ->afterStateUpdated(fn(callable $set) => $set('file_url', null)),
 
                 TextInput::make('title')->label('Título')->required(),
                 TextInput::make('alt_text')->label('Texto Alternativo'),
 
+                // Campo para imágenes y videos MP4
                 FileUpload::make('file_url')
                     ->label('Archivo')
                     ->directory('products/media')
                     ->acceptedFileTypes(['image/*', 'video/mp4'])
-                    ->visible(fn (callable $get) => in_array($get('media_type'), ['image', 'video_mp4'])),
+                    ->visible(fn(callable $get) => in_array($get('media_type'), ['image', 'video_mp4']))
+                    ->required(fn(callable $get) => in_array($get('media_type'), ['image', 'video_mp4'])),  // ← Correcto
 
-                TextInput::make('file_url')
-                    ->label('URL de YouTube / Vimeo')
-                    ->visible(fn (callable $get) => in_array($get('media_type'), ['youtube', 'vimeo'])),
+                // Campo para YouTube y Vimeo
+                TextInput::make('video_id')
+                    ->label('ID del Video')
+                    ->helperText('Ej: dQw4w9wgxcq (YouTube) o 123456789 (Vimeo)')
+                    ->visible(fn(callable $get) => in_array($get('media_type'), ['youtube', 'vimeo']))
+                    ->required(fn(callable $get) => in_array($get('media_type'), ['youtube', 'vimeo'])),
 
                 FileUpload::make('thumbnail_url')
                     ->label('Thumbnail')
@@ -79,6 +86,10 @@ class MediaRelationManager extends RelationManager
             ])
             ->defaultSort('order')
             ->reorderable('order')
+            ->headerActions([
+                CreateAction::make()
+                    ->label('Agregar Multimedia'),
+            ])
             ->actions([
                 EditAction::make(),
                 DeleteAction::make(),

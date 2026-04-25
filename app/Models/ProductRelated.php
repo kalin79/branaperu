@@ -13,20 +13,25 @@ class ProductRelated extends Pivot
     protected $fillable = [
         'product_id',
         'related_product_id',
-        'order',
+        'sort_order',      // ← cambiado
         'is_active',
     ];
 
     protected $casts = [
         'is_active' => 'boolean',
     ];
-    // public function relatedProducts()
-    // {
-    //     return $this->belongsToMany(Product::class, 'product_related', 
-    //         'product_id', 'related_product_id')
-    //         ->using(ProductRelated::class)
-    //         ->withPivot('order', 'is_active')
-    //         ->withTimestamps()
-    //         ->orderBy('product_related.order');
-    // }
+    // En App\Models\Product.php
+    public function relatedProducts()
+    {
+        return $this->belongsToMany(
+            Product::class,
+            'product_related',
+            'product_id',
+            'related_product_id'
+        )
+            ->using(ProductRelated::class)
+            ->withPivot('order', 'is_active')
+            ->withTimestamps()
+            ->orderBy('product_related.order');
+    }
 }

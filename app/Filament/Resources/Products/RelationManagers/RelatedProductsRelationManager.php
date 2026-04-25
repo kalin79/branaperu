@@ -2,7 +2,6 @@
 
 namespace App\Filament\Resources\Products\RelationManagers;
 
-use App\Models\ProductFeature;
 use Filament\Actions\Action;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
@@ -15,29 +14,25 @@ use Filament\Schemas\Schema;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Tables;
 use Filament\Tables\Table;
+use App\Models\Product;
 
-class FeaturesRelationManager extends RelationManager
+class RelatedProductsRelationManager extends RelationManager
 {
-    protected static string $relationship = 'features';
+    protected static string $relationship = 'relatedProducts';
 
-    protected static ?string $title = 'Características';
+    protected static ?string $title = 'Productos Relacionados';
 
     public function form(Schema $schema): Schema
     {
         return $schema
             ->components([
-                Select::make('feature_id')
-                    ->label('Característica')
+                Select::make('related_product_id')
+                    ->label('Producto Relacionado')
                     ->options(function () {
-                        $alreadyAttached = $this->ownerRecord->features()
-                            ->where('feature_id', '!=', $this->record?->feature_id ?? 0)
-                            ->pluck('feature_id');
-
-                        return ProductFeature::where('is_active', true)
-                            ->whereNotIn('id', $alreadyAttached)
+                        return Product::where('is_active', true)
+                            ->where('id', '!=', $this->ownerRecord?->id ?? 0)
                             ->pluck('name', 'id');
                     })
-                    ->getOptionLabelUsing(fn($value) => ProductFeature::find($value)?->name)
                     ->required()
                     ->searchable()
                     ->preload(),
@@ -49,7 +44,7 @@ class FeaturesRelationManager extends RelationManager
                     ->required(),
 
                 Toggle::make('is_active')
-                    ->label('Activa')
+                    ->label('Activo')
                     ->default(true),
             ])
             ->columns(3);
@@ -58,42 +53,38 @@ class FeaturesRelationManager extends RelationManager
     public function table(Table $table): Table
     {
         return $table
-            ->emptyStateHeading('Sin características')
-            ->emptyStateDescription('Agrega características al producto')
-            ->emptyStateIcon('heroicon-o-star')
+            ->emptyStateHeading('Sin productos relacionados')
+            ->emptyStateDescription('Haz clic en "Agregar Producto Relacionado" para comenzar')
+            ->emptyStateIcon('heroicon-o-link')
             ->columns([
                 Tables\Columns\TextColumn::make('pivot.sort_order')
                     ->label('Orden')
                     ->numeric()
                     ->sortable()
                     ->alignCenter()
-                    ->default(0),
+                    ->default(0)
+                    ->badge(),
 
                 Tables\Columns\TextColumn::make('name')
-                    ->label('Característica')
-                    ->searchable()
-                    ->sortable(),
+                    ->label('Producto')
+                    ->searchable(),
 
-                Tables\Columns\ToggleColumn::make('pivot.is_active')   // ← Cambiado a ToggleColumn con pivot
-                    ->label('Activa')
-                    ->updateStateUsing(function ($record, $state) {
-                        $record->pivot->is_active = $state;
-                        $record->pivot->save();
-                    }),
+                Tables\Columns\ToggleColumn::make('pivot.is_active')
+                    ->label('Activo'),
             ])
-            ->defaultSort('pivot_sort_order')
+            ->defaultSort('pivot_sort_order')   // ← Alias interno de Filament v5
             ->headerActions([
                 Action::make('attach')
-                    ->label('Agregar Característica')
+                    ->label('Agregar Producto Relacionado')
                     ->icon('heroicon-o-plus')
                     ->form(fn() => $this->form(Schema::make())->getComponents())
                     ->action(function (array $data) {
-                        $this->ownerRecord->features()->attach($data['feature_id'], [
+                        $this->ownerRecord->relatedProducts()->attach($data['related_product_id'], [
                             'sort_order' => $data['sort_order'] ?? 0,
                             'is_active' => $data['is_active'] ?? true,
                         ]);
                     })
-                    ->successNotificationTitle('Característica agregada correctamente'),
+                    ->successNotificationTitle('Producto relacionado agregado'),
             ])
             ->actions([
                 EditAction::make(),

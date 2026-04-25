@@ -11,8 +11,17 @@ class ProductSection extends Model
     use HasFactory, SoftDeletes;
 
     protected $fillable = [
-        'product_id', 'section_type', 'name', 'description', 
-        'content', 'media_type', 'file_media', 'settings', 'orden', 'is_active'
+        'product_id',
+        'section_type',
+        'name',
+        'description',
+        'content',
+        'media_type',
+        'file_media',
+        'video_id',
+        'settings',
+        'orden',
+        'is_active'
     ];
 
     protected $casts = [

@@ -13,7 +13,7 @@ class ProductFeaturePivot extends Pivot
     protected $fillable = [
         'product_id',
         'feature_id',
-        'orden',
+        'sort_order',
         'is_active',
     ];
 

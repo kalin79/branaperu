@@ -2,39 +2,39 @@
 
 namespace App\Filament\Resources\ProductFeatures;
 
-use App\Filament\Resources\ProductFeatures\Pages\CreateProductFeature;
-use App\Filament\Resources\ProductFeatures\Pages\EditProductFeature;
-use App\Filament\Resources\ProductFeatures\Pages\ListProductFeatures;
 use App\Filament\Resources\ProductFeatures\Schemas\ProductFeatureForm;
 use App\Filament\Resources\ProductFeatures\Tables\ProductFeaturesTable;
+use App\Filament\Resources\ProductFeatures\Pages\ListProductFeatures;
+use App\Filament\Resources\ProductFeatures\Pages\CreateProductFeature;
+use App\Filament\Resources\ProductFeatures\Pages\EditProductFeature;
 use App\Models\ProductFeature;
-use BackedEnum;
 use Filament\Resources\Resource;
-use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
-use Filament\Tables\Table;
+use UnitEnum;
 
 class ProductFeatureResource extends Resource
 {
     protected static ?string $model = ProductFeature::class;
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
+    protected static string|\BackedEnum|null $navigationIcon = Heroicon::Star;
+    protected static string|UnitEnum|null $navigationGroup = 'Configuración Global';
+    protected static ?int $navigationSort = 6;
 
-    public static function form(Schema $schema): Schema
+    protected static ?string $recordTitleAttribute = 'name';
+
+    public static function shouldRegisterNavigation(): bool
+    {
+        return true;
+    }
+
+    public static function form(\Filament\Schemas\Schema $schema): \Filament\Schemas\Schema
     {
         return ProductFeatureForm::configure($schema);
     }
 
-    public static function table(Table $table): Table
+    public static function table(\Filament\Tables\Table $table): \Filament\Tables\Table
     {
         return ProductFeaturesTable::configure($table);
-    }
-
-    public static function getRelations(): array
-    {
-        return [
-            //
-        ];
     }
 
     public static function getPages(): array

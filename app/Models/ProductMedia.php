@@ -11,8 +11,16 @@ class ProductMedia extends Model
     use HasFactory, SoftDeletes;
 
     protected $fillable = [
-        'product_id', 'title', 'alt_text', 'media_type', 
-        'file_url', 'thumbnail_url', 'is_main', 'order', 'is_active'
+        'product_id',
+        'title',
+        'alt_text',
+        'media_type',
+        'file_url',
+        'video_id',
+        'thumbnail_url',
+        'is_main',
+        'order',
+        'is_active'
     ];
 
     protected $casts = [
