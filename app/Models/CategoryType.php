@@ -21,15 +21,6 @@ class CategoryType extends Model
         'is_active' => 'boolean',
     ];
 
-    // ====================== RELACIONES ======================
-
-    public function categories()
-    {
-        return $this->hasMany(Category::class);
-    }
-
-    // ====================== MUTATORS ======================
-
     protected static function boot()
     {
         parent::boot();
@@ -45,5 +36,19 @@ class CategoryType extends Model
                 $categoryType->slug = Str::slug($categoryType->name);
             }
         });
+    }
+
+    // ====================== SCOPES ======================
+
+    public function scopeActive($query)
+    {
+        return $query->where('is_active', true);
+    }
+
+    // ====================== RELACIONES ======================
+
+    public function categories()
+    {
+        return $this->hasMany(Category::class);
     }
 }

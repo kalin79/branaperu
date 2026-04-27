@@ -27,7 +27,17 @@ class ProductSection extends Model
     protected $casts = [
         'is_active' => 'boolean',
         'settings' => 'array',
+        'orden' => 'integer',
     ];
+
+    // ====================== SCOPES ======================
+
+    public function scopeActive($query)
+    {
+        return $query->where('is_active', true);
+    }
+
+    // ====================== RELACIONES ======================
 
     public function product()
     {

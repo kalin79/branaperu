@@ -19,5 +19,6 @@ class ProductFeaturePivot extends Pivot
 
     protected $casts = [
         'is_active' => 'boolean',
+        'sort_order' => 'integer',
     ];
 }

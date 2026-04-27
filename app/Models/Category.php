@@ -11,8 +11,27 @@ class Category extends Model
     use HasFactory, SoftDeletes;
 
     protected $fillable = [
-        'parent_id', 'category_type_id', 'name', 'slug', 'order', 'is_active'
+        'parent_id',
+        'category_type_id',
+        'name',
+        'slug',
+        'order',
+        'is_active'
     ];
+
+    protected $casts = [
+        'is_active' => 'boolean',
+        'order' => 'integer',
+    ];
+
+    // ====================== SCOPES ======================
+
+    public function scopeActive($query)
+    {
+        return $query->where('is_active', true);
+    }
+
+    // ====================== RELACIONES ======================
 
     public function categoryType()
     {

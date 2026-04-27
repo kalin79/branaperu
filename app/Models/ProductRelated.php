@@ -21,17 +21,17 @@ class ProductRelated extends Pivot
         'is_active' => 'boolean',
     ];
     // En App\Models\Product.php
-    public function relatedProducts()
-    {
-        return $this->belongsToMany(
-            Product::class,
-            'product_related',
-            'product_id',
-            'related_product_id'
-        )
-            ->using(ProductRelated::class)
-            ->withPivot('order', 'is_active')
-            ->withTimestamps()
-            ->orderBy('product_related.order');
-    }
+    // public function relatedProducts()
+    // {
+    //     return $this->belongsToMany(
+    //         Product::class,
+    //         'product_related',
+    //         'product_id',
+    //         'related_product_id'
+    //     )
+    //         ->using(ProductRelated::class)
+    //         ->withPivot('order', 'is_active')
+    //         ->withTimestamps()
+    //         ->orderBy('product_related.order');
+    // }
 }

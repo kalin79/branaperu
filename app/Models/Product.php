@@ -31,6 +31,16 @@ class Product extends Model
         'ml',
     ];
 
+    protected $casts = [
+        'price' => 'decimal:2',
+        'old_price' => 'decimal:2',
+        'is_active' => 'boolean',
+        'featured' => 'boolean',
+        'stock' => 'integer',
+        'order' => 'integer',
+        'ml' => 'integer',
+    ];
+
     protected static function boot()
     {
         parent::boot();
@@ -48,6 +58,20 @@ class Product extends Model
         });
     }
 
+    // ====================== SCOPES ======================
+
+    public function scopeActive($query)
+    {
+        return $query->where('is_active', true);
+    }
+
+    public function scopeFeatured($query)
+    {
+        return $query->where('featured', true);
+    }
+
+    // ====================== RELACIONES ======================
+
     public function category()
     {
         return $this->belongsTo(Category::class);
@@ -55,12 +79,14 @@ class Product extends Model
 
     public function media()
     {
-        return $this->hasMany(ProductMedia::class);
+        return $this->hasMany(ProductMedia::class)
+            ->orderBy('order');
     }
 
     public function sections()
     {
-        return $this->hasMany(ProductSection::class);
+        return $this->hasMany(ProductSection::class)
+            ->orderBy('orden');
     }
 
     public function features()
@@ -72,9 +98,9 @@ class Product extends Model
             'feature_id'
         )
             ->using(ProductFeaturePivot::class)
-            ->withPivot('sort_order', 'is_active')           // ← cambiado
+            ->withPivot('sort_order', 'is_active')
             ->withTimestamps()
-            ->orderBy('product_feature.sort_order');         // ← cambiado
+            ->orderBy('product_feature.sort_order');
     }
 
     public function relatedProducts()
@@ -86,8 +112,24 @@ class Product extends Model
             'related_product_id'
         )
             ->using(ProductRelated::class)
-            ->withPivot('sort_order', 'is_active')           // ← cambiado
+            ->withPivot('sort_order', 'is_active')
             ->withTimestamps()
-            ->orderBy('product_related.sort_order');         // ← cambiado
+            ->orderBy('product_related.sort_order');
+    }
+
+    // ====================== HELPERS ======================
+
+    /**
+     * Precio actual (útil para carrito y vistas)
+     * Se corrigió el tipo de retorno
+     */
+    public function getCurrentPriceAttribute(): float
+    {
+        return (float) ($this->price ?? 0);
+    }
+
+    public function isInStock(): bool
+    {
+        return $this->stock > 0;
     }
 }

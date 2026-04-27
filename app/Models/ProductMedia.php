@@ -26,7 +26,17 @@ class ProductMedia extends Model
     protected $casts = [
         'is_main' => 'boolean',
         'is_active' => 'boolean',
+        'order' => 'integer',
     ];
+
+    // ====================== SCOPES ======================
+
+    public function scopeActive($query)
+    {
+        return $query->where('is_active', true);
+    }
+
+    // ====================== RELACIONES ======================
 
     public function product()
     {
