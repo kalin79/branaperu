@@ -23,6 +23,8 @@ class User extends Authenticatable
         'department',
         'province',
         'district_id',
+        'address',               // ← Nueva: Dirección completa
+        'address_reference',        // ← Nuevo campo
         'status',           // Nuevo: Activo / Bloqueado
     ];
 

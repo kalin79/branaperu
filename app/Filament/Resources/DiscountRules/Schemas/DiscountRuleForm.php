@@ -38,7 +38,8 @@ class DiscountRuleForm
                             ->maxValue(100)
                             ->helperText('Ej: 10 = 10% de descuento'),
                     ])
-                    ->columns(2),
+                    ->columns(2)
+                    ->columnSpanFull(),
 
                 Toggle::make('is_active')
                     ->label('Regla activa')

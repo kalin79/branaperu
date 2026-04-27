@@ -2,12 +2,14 @@
 
 namespace App\Filament\Resources\DiscountRules\Tables;
 
+// use App\Models\DiscountRule;
 use Filament\Tables;
-use Filament\Actions\DeleteAction;
+use Filament\Tables\Table;
+
+// use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
 use Filament\Actions\BulkActionGroup;           // ← Aquí está el cambio
-use Filament\Actions\DeleteBulkAction;
-use Filament\Tables\Table;
+// use Filament\Actions\DeleteBulkAction;
 
 class DiscountRulesTable
 {
@@ -16,7 +18,7 @@ class DiscountRulesTable
         return $table
             ->columns([
                 Tables\Columns\TextColumn::make('name')
-                    ->label('Nombre')
+                    ->label('Nombre de la regla')
                     ->searchable()
                     ->sortable(),
 
@@ -28,21 +30,25 @@ class DiscountRulesTable
                 Tables\Columns\TextColumn::make('discount_percent')
                     ->label('Descuento')
                     ->suffix('%')
-                    ->sortable()
-                    ->alignCenter(),
+                    ->sortable(),
 
                 Tables\Columns\ToggleColumn::make('is_active')
-                    ->label('Activa'),
+                    ->label('Activo'),
             ])
-            ->defaultSort('min_amount', 'asc')
+            ->defaultSort('is_active', 'desc')           // ← Activos primero
+            ->defaultSort('created_at', 'desc')          // Luego por fecha (secundario)
+            ->searchable(['name'])
+            ->filters([
+                Tables\Filters\TernaryFilter::make('is_active')
+                    ->label('Estado'),
+            ])
             ->actions([
                 EditAction::make(),
-                DeleteAction::make(),
+                // ← Se eliminó DeleteAction
             ])
             ->bulkActions([
-                BulkActionGroup::make([
-                    DeleteBulkAction::make(),
-                ]),
+                // Se eliminó la posibilidad de eliminar en masa
+                BulkActionGroup::make([]),
             ]);
     }
 }

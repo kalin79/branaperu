@@ -21,11 +21,16 @@ class Order extends Model
         'discount_amount',
         'final_total',
 
-        // Descuentos automáticos y cupones
-        'auto_discount_percent',
-        'auto_discount_min_amount',
+        // === SNAPSHOT DEL CUPÓN ===
         'coupon_id',
         'coupon_code',
+        'coupon_name',
+        'coupon_discount_value',
+
+        // === SNAPSHOT DE LA REGLA DE DESCUENTO AUTOMÁTICO ===
+        'discount_rule_name',
+        'discount_rule_min_amount',
+        'discount_rule_percent',
 
         // Estado y pago
         'status',
@@ -44,6 +49,11 @@ class Order extends Model
         'delivery_reference',
         'delivery_full_name',
 
+        // Consentimientos del usuario (importante para trazabilidad legal)
+        'accepted_terms',
+        'accepted_privacy',
+        'accepted_marketing',
+
         'notes',
     ];
 
@@ -51,10 +61,14 @@ class Order extends Model
         'subtotal' => 'decimal:2',
         'discount_amount' => 'decimal:2',
         'final_total' => 'decimal:2',
-        'auto_discount_percent' => 'decimal:2',
-        'auto_discount_min_amount' => 'decimal:2',
+        'coupon_discount_value' => 'decimal:2',
+        'discount_rule_min_amount' => 'decimal:2',
+        'discount_rule_percent' => 'decimal:2',
         'delivery_cost' => 'decimal:2',
         'payment_response' => 'array',
+        'accepted_terms' => 'boolean',
+        'accepted_privacy' => 'boolean',
+        'accepted_marketing' => 'boolean',
     ];
 
     // ====================== ESTADOS ======================
@@ -157,17 +171,11 @@ class Order extends Model
         return (float) $this->final_total;
     }
 
-    /**
-     * Nombre del cliente (registrado o invitado)
-     */
     public function getCustomerNameAttribute(): string
     {
         return $this->user?->name ?? $this->guest_name ?? 'Cliente invitado';
     }
 
-    /**
-     * Email del cliente (registrado o invitado)
-     */
     public function getCustomerEmailAttribute(): ?string
     {
         return $this->user?->email ?? $this->guest_email;

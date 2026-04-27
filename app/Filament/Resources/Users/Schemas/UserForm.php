@@ -5,6 +5,7 @@ namespace App\Filament\Resources\Users\Schemas;
 use Filament\Schemas\Components\Section;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Textarea;
 use Filament\Schemas\Schema;
 use Spatie\Permission\Models\Role;
 use App\Models\District;
@@ -37,11 +38,6 @@ class UserForm
                             ->label('Teléfono')
                             ->tel()
                             ->maxLength(20),
-                    ])
-                    ->columns(2),
-
-                Section::make('Documento de Identidad')
-                    ->schema([
                         Select::make('document_type')
                             ->label('Tipo de documento')
                             ->options([
@@ -55,8 +51,8 @@ class UserForm
                             ->unique(ignoreRecord: true)
                             ->maxLength(20),
                     ])
-                    ->columns(2),
-
+                    ->columns(2)
+                    ->columnSpanFull(),
                 // ==================== UBICACIÓN ANIDADA ====================
                 Section::make('Ubicación')
                     ->schema([
@@ -89,15 +85,25 @@ class UserForm
                                 $province = $get('province');
                                 if (!$department || !$province)
                                     return [];
-
                                 return District::where('department', $department)
                                     ->where('province', $province)
-                                    ->get()
-                                    ->pluck('district', 'id');   // ← Corrección clave
+                                    ->pluck('district', 'id');
                             })
                             ->searchable()
                             ->preload()
                             ->required(),
+
+                        TextInput::make('address')
+                            ->label('Dirección completa')
+                            ->required()
+                            ->maxLength(255)
+                            ->columnSpanFull(),
+
+                        Textarea::make('address_reference')
+                            ->label('Referencia de la dirección')
+                            ->placeholder('Ej: frente al parque, puerta roja, al lado de la farmacia, 2do piso, etc.')
+                            ->rows(2)
+                            ->columnSpanFull(),
                     ])
                     ->columns(3)
                     ->columnSpanFull(),
@@ -122,7 +128,8 @@ class UserForm
                             ->required()
                             ->helperText('Administrador = acceso total | Editor = limitado | Cliente = usuario de la web'),
                     ])
-                    ->columns(2),
+                    ->columns(2)
+                    ->columnSpanFull(),
 
                 TextInput::make('password')
                     ->label('Contraseña')
