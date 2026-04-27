@@ -1,27 +1,83 @@
-import '../css/app.css';
-import './bootstrap';
+import { createApp, h } from "vue";
+import { createInertiaApp } from "@inertiajs/vue3";
+import { resolvePageComponent } from "laravel-vite-plugin/inertia-helpers";
 
-import { createInertiaApp } from '@inertiajs/vue3';
-import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';
-import { createApp, h } from 'vue';
-import { ZiggyVue } from '../../vendor/tightenco/ziggy';
+// GSAP
+import { gsap } from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
+gsap.registerPlugin(ScrollTrigger);
 
-const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
+// Importar Ziggy (método que te funcionó en el otro proyecto)
+import * as ZiggyModule from "./ziggy";
+const Ziggy = ZiggyModule.Ziggy || {};
 
 createInertiaApp({
-    title: (title) => `${title} - ${appName}`,
-    resolve: (name) =>
-        resolvePageComponent(
-            `./Pages/${name}.vue`,
-            import.meta.glob('./Pages/**/*.vue'),
-        ),
-    setup({ el, App, props, plugin }) {
-        return createApp({ render: () => h(App, props) })
-            .use(plugin)
-            .use(ZiggyVue)
-            .mount(el);
+    title: (title) => `${title} - Brana`,
+
+    resolve: (name) => {
+        const pages = import.meta.glob("./Pages/**/*.vue", { eager: true });
+        let page = pages[`./Pages/${name}.vue`];
+
+        // Si la página tiene layout definido, lo respetamos
+        if (page.default) {
+            page.default.layout = page.default.layout || undefined;
+        }
+
+        return page;
     },
+
+    setup({ el, App, props, plugin }) {
+        const app = createApp({ render: () => h(App, props) });
+
+        app.use(plugin);
+
+        // ==================== FUNCIÓN ROUTE (igual que en tu otro proyecto) ====================
+        const route = (name, params = {}, absolute = false) => {
+            if (!name) return "/";
+            if (typeof name === "string" && name.startsWith("/")) return name;
+
+            // Intentar con Ziggy
+            try {
+                if (Ziggy && Ziggy.route) {
+                    return Ziggy.route(name, params, absolute);
+                }
+            } catch (e) {
+                console.warn(`[Ziggy] Ruta no encontrada: ${name}`);
+            }
+
+            // Fallback simple
+            const fallbacks = {
+                home: "/",
+                shop: "/tienda",
+                locals: "/locales",
+                login: "/login",
+                register: "/register",
+            };
+
+            return fallbacks[name] || `/${name}`;
+        };
+
+        // Registrar route globalmente (igual que en tu otro proyecto)
+        window.route = route;
+        app.config.globalProperties.route = route;
+        app.config.globalProperties.$route = route;
+
+        app.mixin({
+            methods: {
+                route,
+            },
+        });
+
+        // GSAP global
+        app.config.globalProperties.$gsap = gsap;
+        app.config.globalProperties.$ScrollTrigger = ScrollTrigger;
+
+        app.mount(el);
+        return app;
+    },
+
     progress: {
-        color: '#4B5563',
+        color: "#e67e22",
+        showSpinner: true,
     },
 });

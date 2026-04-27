@@ -11,6 +11,9 @@ use Filament\Forms\Components\Toggle;
 use Filament\Schemas\Schema;
 use Illuminate\Support\Str;
 
+use Filament\Forms\Components\FileUpload;
+use Filament\Forms\Components\ColorPicker;
+
 class CategoryForm
 {
     public static function configure(Schema $schema): Schema
@@ -24,7 +27,8 @@ class CategoryForm
                             ->required()
                             ->maxLength(150)
                             ->live(onBlur: true)
-                            ->afterStateUpdated(fn ($state, callable $set) => 
+                            ->afterStateUpdated(
+                                fn($state, callable $set) =>
                                 $set('slug', Str::slug($state))
                             ),
 
@@ -35,6 +39,19 @@ class CategoryForm
                             ->unique(ignoreRecord: true)
                             ->disabled()
                             ->dehydrated(),
+                        FileUpload::make('image')
+                            ->label('Imagen de la categoría')
+                            ->image()
+                            ->directory('categories')
+                            ->maxSize(2048)           // 2MB
+                            ->imageResizeMode('cover')
+                            ->imageCropAspectRatio('16:9')
+                            ->columnSpanFull(),
+
+                        ColorPicker::make('color')
+                            ->label('Color principal')
+                            ->default('#e67e22')
+                            ->helperText('Color que se usará en el frontend'),
 
                         Select::make('category_type_id')
                             ->label('Tipo de Categoría')
@@ -59,7 +76,8 @@ class CategoryForm
                             ->label('Activa')
                             ->default(true),
                     ])
-                    ->columns(2),
+                    ->columns(2)
+                    ->columnSpanFull(),
             ]);
     }
 }

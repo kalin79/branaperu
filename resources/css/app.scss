@@ -1,0 +1,30 @@
+// Google Fonts
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap");
+
+// ==================== ABSTRACT ====================
+@import "abstract/variables";
+@import "abstract/mixins";
+@import "abstract/functions";
+
+// ==================== BASE ====================
+@import "base/reset";
+@import "base/typography";
+@import "base/utilities";
+
+// ==================== COMPONENTS ====================
+@import "components/buttons";
+@import "components/cards";
+@import "components/forms";
+@import "components/product-card";
+
+// ==================== LAYOUT ====================
+@import "layout/header";
+@import "layout/footer";
+
+// ==================== PAGES ====================
+@import "pages/home";
+@import "pages/product-detail";
+@import "pages/checkout";
+
+// ==================== GSAP ANIMATIONS (opcional) ====================
+@import "animations/gsap";

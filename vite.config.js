@@ -1,11 +1,11 @@
-import { defineConfig } from 'vite';
-import laravel from 'laravel-vite-plugin';
-import vue from '@vitejs/plugin-vue';
+import { defineConfig } from "vite";
+import laravel from "laravel-vite-plugin";
+import vue from "@vitejs/plugin-vue";
 
 export default defineConfig({
     plugins: [
         laravel({
-            input: 'resources/js/app.js',
+            input: ["resources/css/app.scss", "resources/js/app.js"],
             refresh: true,
         }),
         vue({
@@ -17,4 +17,23 @@ export default defineConfig({
             },
         }),
     ],
+
+    resolve: {
+        alias: {
+            "@": "/resources/js",
+        },
+    },
+
+    build: {
+        manifest: true,
+    },
+
+    // Configuración para SCSS
+    css: {
+        preprocessorOptions: {
+            scss: {
+                api: "modern-compiler", // Recomendado para Sass moderno
+            },
+        },
+    },
 });

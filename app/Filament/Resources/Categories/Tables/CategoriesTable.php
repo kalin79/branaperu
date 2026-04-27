@@ -9,6 +9,8 @@ use Filament\Actions\BulkActionGroup;           // ← Aquí está el cambio
 use Filament\Actions\DeleteBulkAction;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Columns\ToggleColumn;
+use Filament\Tables\Columns\ImageColumn;
+use Filament\Tables\Columns\ColorColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 
@@ -18,6 +20,13 @@ class CategoriesTable
     {
         return $table
             ->columns([
+                ImageColumn::make('image')
+                    ->label('Imagen')
+                    ->square()
+                    ->size(60),
+
+                ColorColumn::make('color')
+                    ->label('Color'),
                 TextColumn::make('name')
                     ->label('Nombre')
                     ->searchable()
