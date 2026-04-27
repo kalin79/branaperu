@@ -65,4 +65,8 @@ class OrderResource extends Resource
                 ->sort(3),
         ];
     }
+    public static function canAccess(): bool
+    {
+        return auth()->check() && auth()->user()->hasRole('Administrador');
+    }
 }

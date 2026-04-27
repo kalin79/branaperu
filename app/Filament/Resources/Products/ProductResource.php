@@ -42,6 +42,11 @@ class ProductResource extends Resource
         ];
     }
 
+    public static function canAccess(): bool
+    {
+        return auth()->check() && auth()->user()->hasAnyRole(['Administrador', 'Editor']);
+    }
+
     public static function getPages(): array
     {
         return [

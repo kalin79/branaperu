@@ -27,6 +27,11 @@ class DeliveryConfigurationResource extends Resource
         return DeliveryConfigurationForm::configure($schema);
     }
 
+    public static function canAccess(): bool
+    {
+        return auth()->check() && auth()->user()->hasRole('Administrador');
+    }
+
     public static function getPages(): array
     {
         return [

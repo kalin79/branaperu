@@ -43,6 +43,12 @@ class ProductFeatureResource extends Resource
         return ProductFeaturesTable::configure($table);
     }
 
+    public static function canAccess(): bool
+    {
+        return auth()->check() && auth()->user()->hasAnyRole(['Administrador', 'Editor']);
+    }
+
+
     public static function getPages(): array
     {
         return [

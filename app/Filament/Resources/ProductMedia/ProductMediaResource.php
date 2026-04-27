@@ -42,6 +42,11 @@ class ProductMediaResource extends Resource
         return false;   // ← Esto lo oculta del menú
     }
 
+    public static function canAccess(): bool
+    {
+        return auth()->check() && auth()->user()->hasAnyRole(['Administrador', 'Editor']);
+    }
+
     public static function getPages(): array
     {
         return [

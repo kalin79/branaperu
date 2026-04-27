@@ -34,6 +34,11 @@ class CouponResource extends Resource
         return CouponsTable::configure($table);
     }
 
+    public static function canAccess(): bool
+    {
+        return auth()->check() && auth()->user()->hasRole('Administrador');
+    }
+
     public static function getPages(): array
     {
         return [
