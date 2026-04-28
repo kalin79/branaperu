@@ -73,6 +73,8 @@ class SectionsRelationManager extends RelationManager
                     ->label('Archivo')
                     ->directory('products/sections')
                     ->acceptedFileTypes(['image/*', 'video/mp4'])
+                    ->disk('public')
+                    ->preserveFilenames()
                     ->visible(fn(callable $get) => in_array($get('media_type'), ['image', 'video_mp4']))
                     ->required(fn(callable $get) => in_array($get('media_type'), ['image', 'video_mp4'])),
 

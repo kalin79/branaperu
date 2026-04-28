@@ -71,8 +71,8 @@ class ProductForm
                             ->acceptedFileTypes(['image/*'])
                             ->image()
                             ->maxSize(10240) // 10MB
-                            ->imageResizeMode('cover')
-                            ->imageCropAspectRatio('16:9'),
+                            ->disk('public')
+                            ->preserveFilenames(),
 
                         // Orden (no obligatorio)
                         TextInput::make('order')

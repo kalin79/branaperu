@@ -24,7 +24,10 @@ class CategoriesTable
                     ->label('Imagen')
                     ->square()
                     ->size(60),
-
+                ImageColumn::make('icon')
+                    ->label('Icono')
+                    ->square()
+                    ->size(40),
                 ColorColumn::make('color')
                     ->label('Color'),
                 TextColumn::make('name')

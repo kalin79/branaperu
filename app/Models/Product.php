@@ -70,6 +70,20 @@ class Product extends Model
         return $query->where('featured', true);
     }
 
+    // ====================== ACCESORES ======================
+
+    /**
+     * URL completa de la imagen de portada
+     */
+    public function getCoverImageUrlAttribute(): string
+    {
+        if (!empty($this->cover_image)) {
+            return asset('storage/' . $this->cover_image);
+        }
+
+        return asset('images/no-image.png');
+    }
+
     // ====================== RELACIONES ======================
 
     public function category()

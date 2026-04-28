@@ -12,7 +12,7 @@ use Filament\Schemas\Schema;
 use Illuminate\Support\Str;
 
 use Filament\Forms\Components\FileUpload;
-use Filament\Forms\Components\ColorPicker;
+// use Filament\Forms\Components\ColorPicker;
 
 class CategoryForm
 {
@@ -39,19 +39,34 @@ class CategoryForm
                             ->unique(ignoreRecord: true)
                             ->disabled()
                             ->dehydrated(),
+                        FileUpload::make('icon')
+                            ->label('Icono de la categoría')
+                            ->image()
+                            ->directory('categories/icons')
+                            ->maxSize(1024)           // 1MB
+                            ->disk('public')
+                            ->imageAspectRatio('16:9')                    // ← Nuevo
+                            // ->automaticallyCropImagesToAspectRatio()     // ← Nuevo
+                            ->helperText('Icono pequeño (recomendado 200x200 px)')
+                            ->preserveFilenames()               // ← Agregar esto
+                            ->columnSpan(1),
                         FileUpload::make('image')
                             ->label('Imagen de la categoría')
                             ->image()
                             ->directory('categories')
-                            ->maxSize(2048)           // 2MB
-                            ->imageResizeMode('cover')
-                            ->imageCropAspectRatio('16:9')
+                            ->disk('public')
+                            ->maxSize(2048)                    // 2MB
+                            // ->imageAspectRatio('16:9')         // Solo como sugerencia visual
+                            ->automaticallyResizeImagesMode('cover')        // Mantiene proporción sin distorsionar
+                            ->preserveFilenames()               // ← Agregar esto
                             ->columnSpanFull(),
 
-                        ColorPicker::make('color')
-                            ->label('Color principal')
-                            ->default('#e67e22')
-                            ->helperText('Color que se usará en el frontend'),
+                        TextInput::make('color')
+                            ->label('Color')
+                            ->placeholder('Ej: verde, rosado, morado, amarillo')
+                            ->helperText('Escribe el nombre del color (verde, rosado, morado, amarillo, etc.)')
+                            ->maxLength(50)
+                            ->columnSpan(1),
 
                         Select::make('category_type_id')
                             ->label('Tipo de Categoría')

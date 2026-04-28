@@ -16,6 +16,7 @@ class Category extends Model
         'name',
         'slug',
         'image',      // ← nuevo
+        'icon',
         'color',      // ← nuevo
         'order',
         'is_active'
@@ -31,6 +32,18 @@ class Category extends Model
     public function scopeActive($query)
     {
         return $query->where('is_active', true);
+    }
+
+    // ====================== ACCESORES (muy útiles para frontend) ======================
+
+    public function getImageUrlAttribute(): ?string
+    {
+        return $this->image ? asset('storage/' . $this->image) : null;
+    }
+
+    public function getIconUrlAttribute(): ?string
+    {
+        return $this->icon ? asset('storage/' . $this->icon) : null;
     }
 
     // ====================== RELACIONES ======================

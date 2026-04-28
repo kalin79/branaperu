@@ -21,6 +21,8 @@ class ProductFeatureForm
 
                 FileUpload::make('image')
                     ->label('Imagen / Icono')
+                    ->disk('public')
+                    ->preserveFilenames()
                     ->image()
                     ->directory('features')
                     ->columnSpan(1),

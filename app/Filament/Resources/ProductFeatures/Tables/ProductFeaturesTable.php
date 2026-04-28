@@ -23,6 +23,7 @@ class ProductFeaturesTable
 
                 Tables\Columns\ImageColumn::make('image')
                     ->label('Imagen')
+                    ->disk('public')
                     ->square(),
 
                 Tables\Columns\TextColumn::make('name')

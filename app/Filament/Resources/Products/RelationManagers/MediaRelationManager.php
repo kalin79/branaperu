@@ -47,6 +47,8 @@ class MediaRelationManager extends RelationManager
                     ->directory('products/media')
                     ->acceptedFileTypes(['image/*', 'video/mp4'])
                     ->visible(fn(callable $get) => in_array($get('media_type'), ['image', 'video_mp4']))
+                    ->disk('public')
+                    ->preserveFilenames()
                     ->required(fn(callable $get) => in_array($get('media_type'), ['image', 'video_mp4'])),  // ← Correcto
 
                 // Campo para YouTube y Vimeo
@@ -60,6 +62,8 @@ class MediaRelationManager extends RelationManager
                     ->label('Thumbnail')
                     ->directory('products/thumbnails')
                     ->acceptedFileTypes(['image/*'])
+                    ->disk('public')
+                    ->preserveFilenames()
                     ->image(),
 
                 TextInput::make('order')->label('Orden')->numeric()->default(0),
@@ -78,7 +82,7 @@ class MediaRelationManager extends RelationManager
             ->emptyStateIcon('heroicon-o-photo')
             ->columns([
                 Tables\Columns\TextColumn::make('order')->label('Orden')->sortable(),
-                Tables\Columns\ImageColumn::make('thumbnail_url')->label('Vista')->square(),
+                Tables\Columns\ImageColumn::make('thumbnail_url')->label('Vista')->square()->disk('public'),
                 Tables\Columns\TextColumn::make('title')->label('Título')->searchable(),
                 Tables\Columns\TextColumn::make('media_type')->label('Tipo')->badge(),
                 Tables\Columns\ToggleColumn::make('is_main')->label('Principal'),

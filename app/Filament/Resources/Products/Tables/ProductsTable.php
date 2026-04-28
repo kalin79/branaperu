@@ -22,13 +22,14 @@ class ProductsTable
     {
         return $table
             ->columns([
+                // Dentro de ->columns([ ... ])
                 ImageColumn::make('cover_image')
-                    ->label('Cover')
+                    ->label('Portada')
+                    ->disk('public')                    // ← Obligatorio
                     ->square()
-                    ->defaultImageUrl(url('/images/no-image.png'))
+                    ->defaultImageUrl(asset('images/no-image.png'))
                     ->visibleFrom('md')
                     ->alignCenter(),
-
                 TextColumn::make('name')
                     ->label('Producto')
                     ->searchable()
