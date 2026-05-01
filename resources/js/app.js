@@ -10,7 +10,9 @@ gsap.registerPlugin(ScrollTrigger);
 // Importar Ziggy (método que te funcionó en el otro proyecto)
 import * as ZiggyModule from "./ziggy";
 const Ziggy = ZiggyModule.Ziggy || {};
-
+import "../css/app.scss";
+// Importar fuentes para que Vite las procese
+import.meta.glob(["../fonts/**"]);
 createInertiaApp({
     title: (title) => `${title} - Brana`,
 

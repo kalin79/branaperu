@@ -7,6 +7,7 @@ use App\Models\CategoryType;
 use Filament\Schemas\Components\Section;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\Toggle;
 use Filament\Schemas\Schema;
 use Illuminate\Support\Str;
@@ -27,10 +28,10 @@ class CategoryForm
                             ->required()
                             ->maxLength(150)
                             ->live(onBlur: true)
-                            ->afterStateUpdated(
-                                fn($state, callable $set) =>
-                                $set('slug', Str::slug($state))
-                            ),
+                            ->afterStateUpdated(function ($state, callable $set) {
+                                $cleanName = strip_tags($state);           // Elimina etiquetas HTML
+                                $set('slug', Str::slug($cleanName));       // ← Aquí usas la versión limpia
+                            }),
 
                         TextInput::make('slug')
                             ->label('Slug (URL)')
@@ -39,6 +40,13 @@ class CategoryForm
                             ->unique(ignoreRecord: true)
                             ->disabled()
                             ->dehydrated(),
+                        // ←←← AGREGAR AQUÍ ↓↓↓
+                        Textarea::make('description')
+                            ->label('Descripción')
+                            ->rows(3)
+                            ->maxLength(500)
+                            ->helperText('Descripción corta de la categoría (opcional)')
+                            ->columnSpanFull(),   // Ocupa toda la fila
                         FileUpload::make('icon')
                             ->label('Icono de la categoría')
                             ->image()

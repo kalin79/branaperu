@@ -23,11 +23,11 @@ class CategoriesTable
                 ImageColumn::make('image')
                     ->label('Imagen')
                     ->square()
-                    ->size(60),
+                    ->disk('public'),
                 ImageColumn::make('icon')
                     ->label('Icono')
                     ->square()
-                    ->size(40),
+                    ->disk('public'),
                 ColorColumn::make('color')
                     ->label('Color'),
                 TextColumn::make('name')

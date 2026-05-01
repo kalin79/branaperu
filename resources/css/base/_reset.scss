@@ -20,13 +20,22 @@ svg {
     max-width: 100%;
 }
 
+picture {
+    border: none !important;
+    outline: none !important;
+    box-shadow: none !important;
+}
 input,
 button,
 textarea,
 select {
     font: inherit;
 }
-
+img,
+picture {
+    border: none;
+    outline: none;
+}
 button {
     cursor: pointer;
     background: none;

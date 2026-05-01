@@ -15,6 +15,7 @@ class Category extends Model
         'category_type_id',
         'name',
         'slug',
+        'description',        // ← NUEVO
         'image',      // ← nuevo
         'icon',
         'color',      // ← nuevo

@@ -83,6 +83,24 @@ class Product extends Model
 
         return asset('images/no-image.png');
     }
+    /**
+     * Precio formateado: S/ 39.00
+     */
+    public function getFormattedPriceAttribute(): string
+    {
+        return 'S/ ' . number_format((float) $this->price, 2, '.', ',');
+    }
+
+    /**
+     * Precio anterior formateado (opcional)
+     */
+    public function getFormattedOldPriceAttribute(): ?string
+    {
+        if (!$this->old_price) {
+            return null;
+        }
+        return 'S/ ' . number_format((float) $this->old_price, 2, '.', ',');
+    }
 
     // ====================== RELACIONES ======================
 

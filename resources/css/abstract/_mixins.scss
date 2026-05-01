@@ -1,46 +1,330 @@
-@mixin button-base {
-    padding: 12px 24px;
-    border-radius: 8px;
+// TITULARES
+@mixin font-titularCatalogo {
+    font-family: "PP Editorial New";
+    font-size: 2.5rem;
+    line-height: 1em;
+    font-weight: 400;
+    color: $verde;
+    letter-spacing: -0.025em;
+    text-align: left;
+    @media screen and (min-width: 992px) {
+        font-size: 3.75rem;
+        line-height: 1em;
+    }
+    @media screen and (min-width: 1400px) {
+        font-size: 5.125rem;
+        line-height: 0.9em;
+    }
+    br {
+        display: none;
+        @media screen and (min-width: 992px) {
+            display: block;
+        }
+    }
+}
+@mixin font-titularExtrarande {
+    font-family: Poppins, sans-serif;
+    font-size: 2.5rem;
+    line-height: 1em;
+    font-weight: 400;
+    color: $verde;
+    letter-spacing: -0.025em;
+    text-align: left;
+    @media screen and (min-width: 992px) {
+        font-size: 3.75rem;
+        line-height: 1em;
+    }
+    @media screen and (min-width: 1400px) {
+        font-size: 5.125rem;
+        line-height: 0.9em;
+    }
+    br {
+        display: none;
+        @media screen and (min-width: 992px) {
+            display: block;
+        }
+    }
+}
+@mixin font-titularMediano {
+    font-family: Poppins, sans-serif;
+    font-size: 1rem;
+    line-height: 1.25em;
+    font-weight: 500;
+    color: $marron;
+    letter-spacing: -0.025em;
+    text-align: center;
+    @media screen and (min-width: 992px) {
+        font-size: 1.15rem;
+        line-height: 1.25em;
+    }
+    @media screen and (min-width: 1400px) {
+        font-size: 1.25rem;
+        line-height: 1.25em;
+    }
+    br {
+        display: none;
+        @media screen and (min-width: 992px) {
+            display: block;
+        }
+    }
+}
+@mixin font-titularMediano2 {
+    font-family: Poppins, sans-serif;
+    font-size: 1rem;
+    line-height: 0.95em;
     font-weight: 600;
-    transition: all 0.3s ease;
-    cursor: pointer;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-}
-
-@mixin button-primary {
-    @include button-base;
-    background-color: var(--primary);
-    color: white;
-
-    &:hover {
-        background-color: var(--primary-dark);
-        transform: translateY(-2px);
+    color: $marron;
+    letter-spacing: -0.025em;
+    text-align: center;
+    @media screen and (min-width: 992px) {
+        font-size: 1rem;
+        line-height: 1.25em;
+    }
+    @media screen and (min-width: 1400px) {
+        font-size: 1.125rem;
+        line-height: 1.25em;
+    }
+    br {
+        display: none;
+        @media screen and (min-width: 992px) {
+            display: block;
+        }
     }
 }
 
-@mixin flex-center {
-    display: flex;
-    align-items: center;
-    justify-content: center;
+@mixin font-titularGrande {
+    font-family: Poppins, sans-serif;
+    font-size: 2rem;
+    line-height: 1em;
+    font-weight: 300;
+    color: $verde;
+    letter-spacing: -0.025em;
+    @media screen and (min-width: 992px) {
+        font-size: 3rem;
+        line-height: 1em;
+    }
+    @media screen and (min-width: 1400px) {
+        font-size: 3.875rem;
+        line-height: 1em;
+    }
+    br {
+        display: none;
+        @media screen and (min-width: 992px) {
+            display: block;
+        }
+    }
 }
-
-@mixin responsive($breakpoint) {
-    @media (min-width: map-get($breakpoints, $breakpoint)) {
-        @content;
+@mixin font-titular {
+    font-family: Poppins, sans-serif;
+    font-size: 0.9rem;
+    line-height: 1.5em;
+    font-weight: 600;
+    color: $verde;
+    letter-spacing: -0.025em;
+    @media screen and (min-width: 992px) {
+        font-size: 0.9rem;
+        line-height: 1.15em;
+    }
+    @media screen and (min-width: 1400px) {
+        font-size: 1rem;
+        line-height: 1.15em;
+    }
+    br {
+        display: none;
+        @media screen and (min-width: 992px) {
+            display: block;
+        }
+    }
+}
+@mixin font-subitulo {
+    font-family: Poppins, sans-serif;
+    font-size: 0.85rem;
+    line-height: 1.5em;
+    font-weight: 600;
+    color: $marron;
+    letter-spacing: -0.025em;
+    @media screen and (min-width: 992px) {
+        font-size: 1rem;
+        line-height: 1.25em;
+    }
+    br {
+        display: none;
+        @media screen and (min-width: 992px) {
+            display: block;
+        }
     }
 }
 
-@mixin card {
-    background: white;
-    border-radius: 12px;
-    box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
-    transition: all 0.3s ease;
+// DESCRIPCIONES
 
-    &:hover {
-        box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1);
-        transform: translateY(-4px);
+@mixin font-descripcionGrande {
+    font-family: Poppins, sans-serif;
+    font-size: 1.1rem;
+    line-height: 1.25em;
+    font-weight: 400;
+    color: $marron;
+    letter-spacing: -0.025em;
+    text-align: left;
+    @media screen and (min-width: 992px) {
+        font-size: 1.2rem;
+        line-height: 1.35em;
+    }
+    @media screen and (min-width: 1400px) {
+        font-size: 1.375rem;
+        line-height: 1.35em;
+    }
+    br {
+        display: none;
+        @media screen and (min-width: 992px) {
+            display: block;
+        }
+    }
+}
+@mixin font-descripcionMediana {
+    font-family: Poppins, sans-serif;
+    font-size: 0.95rem;
+    line-height: 1.5em;
+    font-weight: 400;
+    color: $marron;
+    letter-spacing: -0.025em;
+    text-align: left;
+    @media screen and (min-width: 992px) {
+        font-size: 1rem;
+        line-height: 1.35em;
+    }
+    @media screen and (min-width: 1400px) {
+        font-size: 1.125rem;
+        line-height: 1.35em;
+    }
+    br {
+        display: none;
+        @media screen and (min-width: 992px) {
+            display: block;
+        }
+    }
+}
+@mixin font-descripcionMediana2 {
+    font-family: Poppins, sans-serif;
+    font-size: 0.75rem;
+    line-height: 1.5em;
+    font-weight: 400;
+    color: $marron;
+    letter-spacing: -0.025em;
+    text-align: left;
+    @media screen and (min-width: 992px) {
+        font-size: 0.938rem;
+        line-height: 1.35em;
+    }
+    @media screen and (min-width: 1400px) {
+        font-size: 0.938rem;
+        line-height: 1.35em;
+    }
+    br {
+        display: none;
+        @media screen and (min-width: 992px) {
+            display: block;
+        }
+    }
+}
+@mixin font-descripcion {
+    font-family: Poppins, sans-serif;
+    font-size: 0.9rem;
+    line-height: 1.25em;
+    font-weight: 500;
+    color: #423f3f;
+    letter-spacing: -0.025em;
+    text-align: left;
+    @media screen and (min-width: 992px) {
+        font-size: 0.9rem;
+        line-height: 1.25em;
+    }
+    @media screen and (min-width: 1400px) {
+        font-size: 1rem;
+        line-height: 1.15em;
+    }
+    br {
+        display: none;
+        @media screen and (min-width: 992px) {
+            display: block;
+        }
+    }
+}
+@mixin font-descripcionPequena {
+    font-family: Poppins, sans-serif;
+    font-size: 0.865rem;
+    line-height: 1.5em;
+    font-weight: 400;
+    color: #727272;
+    letter-spacing: -0.025em;
+    text-align: left;
+    @media screen and (min-width: 992px) {
+        font-size: 0.865rem;
+        line-height: 1.5em;
+    }
+    @media screen and (min-width: 1400px) {
+        font-size: 0.875rem;
+        line-height: 1.5em;
+    }
+    br {
+        display: none;
+        @media screen and (min-width: 992px) {
+            display: block;
+        }
+    }
+}
+
+// PARA EL FOOTER Y HEADER
+
+@mixin font-menu-header {
+    font-family: Poppins, sans-serif;
+    font-size: 1rem;
+    line-height: 1.5em;
+    font-weight: 600;
+    color: #606060;
+    letter-spacing: -0.025em;
+    @media screen and (min-width: 992px) {
+        font-size: 0.9rem;
+        line-height: 1.25em;
+    }
+    @media screen and (min-width: 1200px) {
+        font-size: 1rem;
+        line-height: 1.5em;
+    }
+}
+
+@mixin font-titular-footer {
+    font-family: Poppins, sans-serif;
+    font-size: 0.85rem;
+    line-height: 1.5em;
+    font-weight: 600;
+    color: $verdeClaro;
+    letter-spacing: -0.025em;
+    @media screen and (min-width: 992px) {
+        font-size: 1rem;
+        line-height: 1.25em;
+    }
+    br {
+        display: none;
+        @media screen and (min-width: 992px) {
+            display: block;
+        }
+    }
+}
+@mixin font-link-footer {
+    font-family: Poppins, sans-serif;
+    font-size: 0.8rem;
+    line-height: 1.5em;
+    font-weight: 500;
+    color: #fff;
+    letter-spacing: -0.025em;
+    @media screen and (min-width: 992px) {
+        font-size: 0.875rem;
+        line-height: 1.5em;
+    }
+    br {
+        display: none;
+        @media screen and (min-width: 992px) {
+            display: block;
+        }
     }
 }

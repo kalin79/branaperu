@@ -7,6 +7,8 @@ export default defineConfig({
         laravel({
             input: ["resources/css/app.scss", "resources/js/app.js"],
             refresh: true,
+            // ← Esto es clave para que Vite procese las fuentes
+            assets: ["resources/fonts/**"],
         }),
         vue({
             template: {

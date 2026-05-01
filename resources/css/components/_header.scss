@@ -1,0 +1,134 @@
+.headerMainContainer {
+    background: rgba(white, 0.75);
+    position: fixed;
+    top: 0;
+    border: 0px solid red;
+    height: 90px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    width: 100%;
+    &::after {
+        content: "";
+        position: absolute;
+        left: 0;
+        bottom: -10px;
+        width: 100%;
+        height: 10px;
+        pointer-events: none;
+        background: linear-gradient(
+            to bottom,
+            rgba(0, 0, 0, 0.15),
+            transparent
+        );
+    }
+    .lagoutContainer {
+        display: grid;
+        grid-template-columns: repeat(12, 1fr);
+        gap: 1rem;
+        .logoMainContainer {
+            grid-column: 1 / span 2;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: flex-start;
+            img {
+                width: 120px;
+                height: auto;
+                object-fit: contain;
+            }
+        }
+        .menuContainer {
+            grid-column: 3 / span 7;
+            display: flex;
+            justify-content: flex-start;
+            align-items: center;
+            gap: 1rem;
+            padding-top: 0.5rem;
+            a {
+                @include font-menu-header;
+                position: relative;
+                &:before {
+                    content: "";
+                    position: absolute;
+                    bottom: -0.15rem;
+                    left: 0;
+                    width: 0%;
+                    height: 2px;
+                    transition: 0.25s all ease-in;
+                    background: $verde;
+                }
+                &.active,
+                &:hover {
+                    &:before {
+                        width: 100%;
+                    }
+                }
+            }
+        }
+        .shopContainer {
+            grid-column: 10 / -1;
+            justify-self: end;
+            height: 55px;
+            max-width: 160px;
+            width: 100%;
+            background: $verde;
+            border-radius: 35px;
+            display: flex;
+            justify-content: center;
+            gap: 1.5rem;
+            box-sizing: border-box;
+            padding: 0 1rem;
+            .shoppingBag {
+                border: 0px solid red;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                flex-direction: column;
+                height: 100%;
+                .bagContainer {
+                    position: relative;
+                    width: 25px;
+                    height: 25px;
+
+                    div {
+                        position: absolute;
+                        top: -0.5rem;
+                        right: -0.65rem;
+                        width: 20px;
+                        height: 20px;
+                        border-radius: 50%;
+                        overflow: hidden;
+                        background: #ffffff;
+                        color: $verde;
+                        font-family: Poppins, sans-serif;
+                        font-size: 0.8rem;
+                        font-weight: 600;
+                        text-align: center;
+                    }
+                }
+            }
+            .separate {
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                flex-direction: column;
+                height: 100%;
+                .barra {
+                    width: 1px;
+                    height: 70%;
+                    background: rgba(white, 0.5);
+                }
+            }
+            .userContainer {
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                flex-direction: column;
+                height: 100%;
+                border: 0px solid red;
+            }
+        }
+    }
+}
