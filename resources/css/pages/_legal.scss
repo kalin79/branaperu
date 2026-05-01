@@ -5,7 +5,10 @@
         gap: 1rem;
         padding: 5rem 0;
         > div {
-            grid-column: 1 / span 10;
+            grid-column: 1 / -1;
+            @media screen and (min-width: 992px) {
+                grid-column: 1 / span 10;
+            }
             h1 {
                 @include font-titularMediano3;
                 margin-bottom: 1rem;
