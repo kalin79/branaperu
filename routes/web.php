@@ -4,6 +4,10 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Frontend\HomeController;
 use App\Http\Controllers\Frontend\AboutController;
 use App\Http\Controllers\Frontend\MayoristasController;
+use App\Http\Controllers\Frontend\TerminosController;
+use App\Http\Controllers\Frontend\EntregaController;
+use App\Http\Controllers\Frontend\PrivacidadController;
+use App\Http\Controllers\Frontend\CambioController;
 use Inertia\Inertia;
 
 // ====================== PÁGINAS PÚBLICAS ======================
@@ -12,6 +16,14 @@ Route::get('/acerca-de-brana', [AboutController::class, 'index'])
     ->name('acerca-de-brana');
 Route::get('/ventas-mayorista', [MayoristasController::class, 'index'])
     ->name('ventas-mayorista');
+Route::get('/terminos-y-condiciones', [TerminosController::class, 'index'])
+    ->name('terminos-y-condiciones');
+Route::get('/politica-de-entrega', [EntregaController::class, 'index'])
+    ->name('politica-de-entrega');
+Route::get('/politica-de-privacidad', [PrivacidadController::class, 'index'])
+    ->name('politica-de-privacidad');
+Route::get('/politica-de-cambio', [CambioController::class, 'index'])
+    ->name('politica-de-cambio');
 
 Route::get('/tienda', function () {
     return Inertia::render('Shop/Index');

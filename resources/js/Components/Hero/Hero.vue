@@ -2,6 +2,7 @@
 <script setup>
 import HeroSlider from "./HeroSimple.vue";
 import HeroFooter from "./HeroFooter.vue";
+import HeroLegal from "./HeroLegal.vue";
 
 defineProps({
     slides: {
@@ -19,6 +20,10 @@ const components = {
     footer: {
         component: HeroFooter,
         props: () => ({}),
+    },
+    legal: {
+        component: HeroLegal,
+        props: (props) => ({ slides: props.slides }),
     },
 };
 
