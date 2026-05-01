@@ -2,7 +2,7 @@
 <script setup>
 import { Splide, SplideSlide } from "@splidejs/vue-splide";
 import "@splidejs/vue-splide/css"; // Estilos por defecto
-
+import { Link } from "@inertiajs/vue3";
 const props = defineProps({
     slides: {
         type: Array,
@@ -13,7 +13,7 @@ const props = defineProps({
 
 // Opciones de Splide (fácil de entender)
 const options = {
-    type: "loop", // loop = infinito
+    // type: "loop", // loop = infinito
     perPage: 1,
     autoplay: true,
     interval: 4000,
@@ -29,7 +29,18 @@ const options = {
     <section class="sliderContainerHero">
         <Splide :options="options" class="itemContainer">
             <SplideSlide v-for="(item, index) in props.slides" :key="index">
+                <Link :href="item.link" v-if="item.link">
+                    <img
+                        :src="item.imagepc"
+                        :srcset="`${item.imagemobile} 768w, ${item.imagepc} 1200w`"
+                        sizes="(max-width: 768px) 100vw, 1200px"
+                        :alt="item.titulo || 'Slide'"
+                        class="media"
+                        loading="lazy"
+                    />
+                </Link>
                 <img
+                    v-else
                     :src="item.imagepc"
                     :srcset="`${item.imagemobile} 768w, ${item.imagepc} 1200w`"
                     sizes="(max-width: 768px) 100vw, 1200px"

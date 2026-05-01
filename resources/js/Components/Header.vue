@@ -2,9 +2,12 @@
     <div class="headerMainContainer">
         <div class="container-fluid">
             <div class="lagoutContainer">
-                <div class="logoMainContainer">
+                <button class="btnMobilContainer">
+                    <img :src="iconMenu" alt="Menu Brana" />
+                </button>
+                <Link href="/" class="logoMainContainer">
                     <img :src="logo" alt="Brana" />
-                </div>
+                </Link>
                 <nav class="menuContainer">
                     <Link href="/acerca-de-brana">Acerca de Brana</Link>
                     <Link href="/productos">Catálogo de Productos</Link>
@@ -37,4 +40,5 @@ import { Link } from "@inertiajs/vue3";
 const logo = "/images/logo.svg";
 const bolsa = "/images/bolsa.svg";
 const user = "/images/user.svg";
+const iconMenu = "/images/menu.svg";
 </script>

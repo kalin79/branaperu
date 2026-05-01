@@ -2,10 +2,16 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Frontend\HomeController;
+use App\Http\Controllers\Frontend\AboutController;
+use App\Http\Controllers\Frontend\MayoristasController;
 use Inertia\Inertia;
 
 // ====================== PÁGINAS PÚBLICAS ======================
 Route::get('/', [HomeController::class, 'index'])->name('home');
+Route::get('/acerca-de-brana', [AboutController::class, 'index'])
+    ->name('acerca-de-brana');
+Route::get('/ventas-mayorista', [MayoristasController::class, 'index'])
+    ->name('ventas-mayorista');
 
 Route::get('/tienda', function () {
     return Inertia::render('Shop/Index');

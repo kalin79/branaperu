@@ -1,0 +1,118 @@
+.acercaPageContainer {
+    .acercaSection {
+        .headerContainer {
+            position: relative;
+            .imagenFullContainer {
+                position: relative;
+                width: 100%;
+                height: 100%;
+                @media screen and (min-width: 992px) {
+                    position: absolute;
+                    width: 50%;
+                    height: 100%;
+                    right: -2vw;
+                    top: 0;
+                    border-radius: 0px 0px 0 20px;
+                    overflow: hidden;
+                }
+                @media screen and (min-width: 1600px) {
+                    width: 40%;
+                }
+                img {
+                    width: 100%;
+                    height: 100%;
+                    object-fit: cover;
+                }
+            }
+            .layoutContainer {
+                display: grid;
+                grid-template-columns: repeat(1, 1fr);
+                gap: 1rem;
+                @media screen and (min-width: 992px) {
+                    grid-template-columns: repeat(2, 1fr);
+                }
+                > div {
+                    &:first-child {
+                        height: auto;
+                        display: flex;
+                        flex-direction: column;
+                        justify-content: center;
+                        align-items: flex-start;
+                        padding: 5rem 0 3rem;
+                        @media screen and (min-width: 992px) {
+                            height: 750px;
+                            padding: 0;
+                        }
+                        .alinearContainer {
+                            h2 {
+                                @include font-subitulo;
+                                color: $verdaEncendido;
+                                margin-bottom: 0.5rem;
+                            }
+                            h1 {
+                                @include font-titularGrande2;
+                                span {
+                                    color: $verde;
+                                    font-family: "PP Editorial New";
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        .bodyContainer {
+            padding: 3rem 0;
+            @media screen and (min-width: 992px) {
+                padding: 5rem 0;
+            }
+            .layoutGrid {
+                display: grid;
+                grid-template-columns: repeat(12, 1fr);
+                gap: 3rem 1rem;
+                > div {
+                    &:nth-of-type(1) {
+                        grid-column: 1 / -1;
+                        @media screen and (min-width: 992px) {
+                            grid-column: 3 / span 8;
+                        }
+                        h3 {
+                            @include font-descripcionGrande;
+                        }
+                    }
+                    &:nth-of-type(2) {
+                        grid-column: 1 / -1;
+                        @media screen and (min-width: 992px) {
+                            grid-column: 3 / span 4;
+                        }
+                        p {
+                            @include font-descripcion;
+                            color: $marron;
+                            font-weight: 400;
+                        }
+                        h2 {
+                            @include font-titularMediano3;
+                            margin-bottom: 0.75rem;
+                        }
+                    }
+                    &:nth-of-type(3) {
+                        grid-column: 1 / -1;
+                        @media screen and (min-width: 992px) {
+                            grid-column: 7 / span 4;
+                            grid-row: 3;
+                        }
+                        p {
+                            @include font-descripcion;
+                            color: $marron;
+                            font-weight: 400;
+                        }
+                        h2 {
+                            @include font-titularMediano3;
+                            margin-bottom: 0.75rem;
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

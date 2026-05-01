@@ -71,7 +71,7 @@
 @mixin font-titularMediano2 {
     font-family: Poppins, sans-serif;
     font-size: 1rem;
-    line-height: 0.95em;
+    line-height: 1.25em;
     font-weight: 600;
     color: $marron;
     letter-spacing: -0.025em;
@@ -83,6 +83,51 @@
     @media screen and (min-width: 1400px) {
         font-size: 1.125rem;
         line-height: 1.25em;
+    }
+    br {
+        display: none;
+        @media screen and (min-width: 992px) {
+            display: block;
+        }
+    }
+}
+@mixin font-titularMediano3 {
+    font-family: Poppins, sans-serif;
+    font-size: 2rem;
+    line-height: 0.95em;
+    font-weight: 400;
+    color: $marron;
+    letter-spacing: -0.025em;
+    text-align: left;
+    @media screen and (min-width: 992px) {
+        font-size: 2.225rem;
+        line-height: 1.25em;
+    }
+    @media screen and (min-width: 1400px) {
+        font-size: 2.625rem;
+        line-height: 1.25em;
+    }
+    br {
+        display: none;
+        @media screen and (min-width: 992px) {
+            display: block;
+        }
+    }
+}
+@mixin font-titularGrande2 {
+    font-family: Poppins, sans-serif;
+    font-size: 2rem;
+    line-height: 1em;
+    font-weight: 500;
+    color: $marron;
+    letter-spacing: -0.025em;
+    @media screen and (min-width: 992px) {
+        font-size: 2.85rem;
+        line-height: 1em;
+    }
+    @media screen and (min-width: 1400px) {
+        font-size: 3.25rem;
+        line-height: 1em;
     }
     br {
         display: none;
@@ -229,18 +274,18 @@
 @mixin font-descripcion {
     font-family: Poppins, sans-serif;
     font-size: 0.9rem;
-    line-height: 1.25em;
+    line-height: 1.5em;
     font-weight: 500;
     color: #423f3f;
     letter-spacing: -0.025em;
     text-align: left;
     @media screen and (min-width: 992px) {
         font-size: 0.9rem;
-        line-height: 1.25em;
+        line-height: 1.5em;
     }
     @media screen and (min-width: 1400px) {
         font-size: 1rem;
-        line-height: 1.15em;
+        line-height: 1.5em;
     }
     br {
         display: none;

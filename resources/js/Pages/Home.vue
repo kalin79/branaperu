@@ -1,10 +1,12 @@
 <template>
-    <main>
-        <HeroComponent type="slider" :slides="banners" />
-        <CuidadosComponent :data="cuidados" />
-        <CatalogoComponent :categories="categories" />
-        <UnicaComponent />
-    </main>
+    <AppLayout :title_meta="title_meta" :description_meta="description_meta">
+        <div>
+            <HeroComponent type="slider" :slides="banners" />
+            <CuidadosComponent :data="cuidados" />
+            <CatalogoComponent :categories="categories" />
+            <UnicaComponent />
+        </div>
+    </AppLayout>
 </template>
 
 <script setup>
@@ -17,14 +19,14 @@ const banners = [
     {
         titulo: "Alquiler de maquinaria pesada",
         accion: "Ver equipos",
-        link: "/equipos",
+        link: "/productos",
         imagepc: "/images/1.webp",
         imagemobile: "/images/1.webp",
     },
     {
         titulo: "Soluciones para construcción",
         accion: "Contáctanos",
-        link: "/contacto",
+        link: "/productos",
         imagepc: "/images/2.webp",
         imagemobile: "/images/2.webp",
     },
@@ -60,16 +62,17 @@ const cuidados = [
         color: "rosado",
     },
 ];
-
+// Importante: Desactivamos layout automático de Inertia
 defineOptions({
-    layout: AppLayout,
+    layout: null, // ← Agrega esta línea
 });
-
 defineProps({
     categories: {
         type: Array,
         required: true,
         default: () => [],
     },
+    title_meta: String,
+    description_meta: String,
 });
 </script>

@@ -34,6 +34,8 @@ class HomeController extends Controller
 
         return Inertia::render('Home', [
             'categories' => $parentCategories,
+            'title_meta' => 'Acerca de Brana',
+            'description_meta' => 'Texto descriptivo...',
         ]);
     }
     /**
