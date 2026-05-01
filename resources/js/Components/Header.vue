@@ -6,11 +6,11 @@
                     <img :src="logo" alt="Brana" />
                 </div>
                 <nav class="menuContainer">
-                    <Link href="/">Acerca de Brana</Link>
-                    <Link href="/">Catálogo de Productos</Link>
-                    <Link href="/">Ventas Mayorista</Link>
-                    <Link href="/">Blog</Link>
-                    <Link href="/">Contáctenos</Link>
+                    <Link href="/acerca-de-brana">Acerca de Brana</Link>
+                    <Link href="/productos">Catálogo de Productos</Link>
+                    <Link href="/ventas-mayorista">Ventas Mayorista</Link>
+                    <Link href="/blog">Blog</Link>
+                    <Link href="/contacto">Contáctenos</Link>
                 </nav>
                 <div class="shopContainer">
                     <div class="shoppingBag">

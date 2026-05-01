@@ -28,22 +28,32 @@
                     <h2>MAPA DE SITIO</h2>
                     <div class="navContainer">
                         <Link href="/">Principal</Link>
-                        <Link href="/">Acerca de Brana</Link>
-                        <Link href="/">Catálogo de productos</Link>
-                        <Link href="/">Ventas Mayorista</Link>
-                        <Link href="/">BLOG</Link>
-                        <Link href="/">Contáctenos</Link>
-                        <Link href="/">Login</Link>
+                        <Link href="/acerca-de-brana">Acerca de Brana</Link>
+                        <Link href="/productos">Catálogo de productos</Link>
+                        <Link href="/ventas-mayorista">Ventas Mayorista</Link>
+                        <Link href="/blog">BLOG</Link>
+                        <Link href="/contacto">Contáctenos</Link>
+                        <Link href="/auth/login">Login</Link>
                     </div>
                 </div>
                 <div class="columnaTres">
                     <h2>NUESTRA POLÍTICAS</h2>
                     <div class="navContainer">
-                        <Link href="/">Términos y condiciones</Link>
-                        <Link href="/">Políticas de entrega</Link>
-                        <Link href="/">Políticas de privacidad</Link>
-                        <Link href="/">Política de cambio</Link>
-                        <Link href="/">Libro de reclamaciones</Link>
+                        <Link href="/terminos-y-condiciones"
+                            >Términos y condiciones</Link
+                        >
+                        <Link href="/politica-de-entrega"
+                            >Políticas de entrega</Link
+                        >
+                        <Link href="/politica-de-privacidad"
+                            >Políticas de privacidad</Link
+                        >
+                        <Link href="/politica-de-cambio"
+                            >Política de cambio</Link
+                        >
+                        <Link href="/libro-de-reclamaciones"
+                            >Libro de reclamaciones</Link
+                        >
                     </div>
                 </div>
                 <div class="columnaCuatro">
