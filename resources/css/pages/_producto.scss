@@ -368,6 +368,10 @@
             }
             .siderColumn {
                 position: relative;
+                margin-top: 3rem;
+                @media screen and (min-width: 992px) {
+                    margin-top: 0;
+                }
                 .sideBarSticky {
                     position: static;
                     max-height: none;
