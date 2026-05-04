@@ -8,6 +8,7 @@ use App\Http\Controllers\Frontend\TerminosController;
 use App\Http\Controllers\Frontend\EntregaController;
 use App\Http\Controllers\Frontend\PrivacidadController;
 use App\Http\Controllers\Frontend\CambioController;
+use App\Http\Controllers\Frontend\ProductController;
 use Inertia\Inertia;
 
 // ====================== PÁGINAS PÚBLICAS ======================
@@ -24,18 +25,11 @@ Route::get('/politica-de-privacidad', [PrivacidadController::class, 'index'])
     ->name('politica-de-privacidad');
 Route::get('/politica-de-cambio', [CambioController::class, 'index'])
     ->name('politica-de-cambio');
-
-Route::get('/tienda', function () {
-    return Inertia::render('Shop/Index');
-})->name('shop');
-
-Route::get('/producto/{slug}', function ($slug) {
-    return Inertia::render('Product/Show', ['slug' => $slug]);
-})->name('product.show');
-
-Route::get('/locales', function () {
-    return Inertia::render('Locals/Index');
-})->name('locals');
+Route::get('/productos', [ProductController::class, 'index'])
+    ->name('products.index');
+// Esta ruta se usará vía Inertia para cargar productos paginados
+Route::get('/productos/categoria/{slug}', [ProductController::class, 'showProductsByCategory'])
+    ->name('products.by.category');
 
 // ====================== AUTENTICACIÓN ======================
 Route::middleware('guest')->group(function () {

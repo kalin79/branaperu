@@ -19,7 +19,8 @@
                 margin: 1rem 0;
             }
             h3 {
-                @include font-titularMediano2;
+                @include font-titularMediano;
+                font-width: 600;
                 text-align: left;
                 margin-bottom: 1rem;
             }

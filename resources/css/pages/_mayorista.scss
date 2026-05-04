@@ -91,7 +91,8 @@
                 .bodyCard {
                     margin-top: 1rem;
                     h3 {
-                        @include font-titularMediano2;
+                        @include font-titularMediano;
+                        font-width: 600;
                         margin-bottom: 0.5rem;
                     }
                     p {

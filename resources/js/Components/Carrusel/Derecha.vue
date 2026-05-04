@@ -27,38 +27,38 @@
                                     .data"
                                 :key="product.id"
                             >
-                                <div
-                                    :class="['cardProduct', category.color]"
-                                    @click="
-                                        goToProducto(
-                                            product.slug,
-                                            category.color,
-                                        )
-                                    "
-                                >
-                                    <div :class="['imgContainerCard']">
-                                        <img
-                                            :src="`/storage/${product.cover_image}`"
-                                            :alt="product.name"
-                                        />
-                                    </div>
-                                    <div class="btnCar">
-                                        <img :src="imgBolsa" alt="Slide" />
-                                    </div>
-                                    <div class="footerCar">
-                                        <div>
-                                            <h3>
-                                                {{ cleanHtml(category.name) }}
-                                            </h3>
-                                            <p v-html="product.name"></p>
+                                <Link :href="`/producto/${product.slug}`">
+                                    <div
+                                        :class="['cardProduct', category.color]"
+                                    >
+                                        <div :class="['imgContainerCard']">
+                                            <img
+                                                :src="`/storage/${product.cover_image}`"
+                                                :alt="product.name"
+                                            />
                                         </div>
-                                        <div>
-                                            <p>
-                                                {{ product.formatted_price }}
-                                            </p>
+                                        <div class="btnCar">
+                                            <img :src="imgBolsa" alt="Slide" />
+                                        </div>
+                                        <div class="footerCar">
+                                            <div>
+                                                <h3>
+                                                    {{
+                                                        cleanHtml(category.name)
+                                                    }}
+                                                </h3>
+                                                <p v-html="product.name"></p>
+                                            </div>
+                                            <div>
+                                                <p>
+                                                    {{
+                                                        product.formatted_price
+                                                    }}
+                                                </p>
+                                            </div>
                                         </div>
                                     </div>
-                                </div>
+                                </Link>
                             </SplideSlide>
                         </Splide>
                     </div>

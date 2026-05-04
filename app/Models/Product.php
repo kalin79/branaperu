@@ -38,7 +38,7 @@ class Product extends Model
         'featured' => 'boolean',
         'stock' => 'integer',
         'order' => 'integer',
-        'ml' => 'integer',
+        'ml' => 'string',
     ];
 
     protected static function boot()

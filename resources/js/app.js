@@ -1,6 +1,7 @@
 import { createApp, h } from "vue";
 import { createInertiaApp } from "@inertiajs/vue3";
 import { resolvePageComponent } from "laravel-vite-plugin/inertia-helpers";
+import { stripHtml, removeBreaks } from "@/Utils/string";
 
 // GSAP
 import { gsap } from "gsap";
@@ -56,7 +57,8 @@ createInertiaApp({
         // GSAP Global
         app.config.globalProperties.$gsap = gsap;
         app.config.globalProperties.$ScrollTrigger = ScrollTrigger;
-
+        app.provide("$stripHtml", stripHtml);
+        app.provide("$removeBreaks", removeBreaks);
         app.mount(el);
         return app;
     },

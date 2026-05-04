@@ -1,0 +1,531 @@
+.productPageContainer {
+    // Aqui trabajamos sobre la pagina de listado de productos
+    .listaSectionContainer {
+        .layoutContainer {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 1rem;
+            @media screen and (min-width: 992px) {
+                grid-template-columns: 400px 1fr;
+                gap: 60px;
+            }
+            .contentColumn {
+                min-width: 0;
+                border: 0px solid blue;
+                padding: 5rem 0 5rem;
+                .listadoSection {
+                    border: 0px solid red;
+                    .product-grid-container {
+                        .products-grid {
+                            display: grid;
+                            grid-template-columns: 1fr;
+                            gap: 1rem;
+                            border: 0px solid red;
+                            margin-top: 2rem;
+                            @media screen and (min-width: 576px) {
+                                display: grid;
+                                grid-template-columns: repeat(
+                                    auto-fill,
+                                    minmax(250px, 1fr)
+                                );
+                            }
+                            .product-card {
+                                width: 100%;
+                                height: 450px;
+                                border-radius: 30px;
+                                overflow: hidden;
+                                position: relative;
+                                cursor: pointer;
+                                background: #f8f7f4;
+                                border: 2px solid rgba($verde, 0.25);
+                                transition: 0.25s all ease-in;
+
+                                @media screen and (min-width: 1400px) {
+                                    height: 480px;
+                                }
+
+                                &.rosado {
+                                    border: 2px solid rgba($rosadoOscuro, 0.25);
+                                    .footerCar {
+                                        > div {
+                                            &:nth-of-type(1) {
+                                                h3 {
+                                                    color: $rosadoOscuro;
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+
+                                &.morado {
+                                    border: 2px solid rgba($morado, 0.25);
+                                    .footerCar {
+                                        > div {
+                                            &:nth-of-type(1) {
+                                                h3 {
+                                                    color: $morado;
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+
+                                &.amarrillo {
+                                    border: 2px solid rgba($amarrillo, 0.25);
+                                    .footerCar {
+                                        > div {
+                                            &:nth-of-type(1) {
+                                                h3 {
+                                                    color: $amarrillo;
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                                &:hover {
+                                    border: 2px solid rgba($verde, 1);
+                                    &.rosado {
+                                        border: 2px solid rgba($rosadoOscuro, 1);
+                                    }
+
+                                    &.morado {
+                                        border: 2px solid rgba($morado, 1);
+                                    }
+
+                                    &.amarrillo {
+                                        border: 2px solid rgba($amarrillo, 1);
+                                    }
+                                }
+                                .product-image {
+                                    height: 100%;
+                                    display: flex;
+                                    justify-content: center;
+                                    align-items: center;
+                                    flex-direction: column;
+
+                                    img {
+                                        width: 280px;
+                                        height: auto;
+                                        object-fit: contain;
+
+                                        @media screen and (min-width: 1400px) {
+                                            width: 280px;
+                                        }
+                                    }
+                                }
+                                .btnCar {
+                                    position: absolute;
+                                    top: 1.25rem;
+                                    right: 1.25rem;
+                                    width: 42px;
+                                    height: 42px;
+                                    background: white;
+                                    border-radius: 50%;
+                                    display: flex;
+                                    justify-content: center;
+                                    align-items: center;
+                                    flex-direction: column;
+                                    cursor: pointer;
+
+                                    img {
+                                        width: 25px;
+                                        height: 25px;
+                                    }
+                                }
+                                .product-info {
+                                    position: absolute;
+                                    bottom: 1.5rem;
+                                    left: 0;
+                                    width: 100%;
+                                    display: flex;
+                                    justify-content: space-between;
+                                    padding: 1rem 2rem;
+                                    align-items: center;
+                                    gap: 1rem;
+
+                                    @media screen and (min-width: 1400px) {
+                                        padding: 1rem 1.5rem;
+                                    }
+
+                                    > div {
+                                        &:nth-of-type(1) {
+                                            h3 {
+                                                @include font-titular;
+                                                margin-bottom: 0.35rem;
+                                                text-transform: uppercase;
+                                            }
+                                            p {
+                                                @include font-descripcion;
+                                            }
+                                        }
+                                        &:nth-of-type(2) {
+                                            p {
+                                                background: white;
+                                                padding: 0.5rem;
+                                                text-align: center;
+                                                border-radius: 30px;
+                                                min-width: 100px;
+                                            }
+                                        }
+                                    }
+                                    &.rosado {
+                                        > div {
+                                            &:nth-of-type(1) {
+                                                h3 {
+                                                    color: $rosadoOscuro;
+                                                }
+                                            }
+                                        }
+                                    }
+
+                                    &.morado {
+                                        > div {
+                                            &:nth-of-type(1) {
+                                                h3 {
+                                                    color: $morado;
+                                                }
+                                            }
+                                        }
+                                    }
+
+                                    &.amarrillo {
+                                        > div {
+                                            &:nth-of-type(1) {
+                                                h3 {
+                                                    color: $amarrillo;
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        /* Paginación */
+                        .pagination {
+                            display: flex;
+                            justify-content: center;
+                            flex-wrap: wrap;
+                            gap: 8px;
+                            margin-top: 40px;
+                            .page-link {
+                                padding: 10px 16px;
+                                border: 1px solid #ddd;
+                                border-radius: 8px;
+                                text-decoration: none;
+                                color: #374151;
+                                &.active {
+                                    background: #10b981;
+                                    color: white;
+                                    border-color: #10b981;
+                                }
+                            }
+                        }
+
+                        .loading-state {
+                            display: flex;
+                            flex-direction: column;
+                            justify-content: center;
+                            align-items: center;
+                            p {
+                                @include font-descripcionMediana2;
+                            }
+                        }
+                        .grid-header {
+                            display: grid;
+                            grid-template-columns: repeat(2, 1fr);
+                            gap: 1rem;
+                            .rightContainer {
+                                display: flex;
+                                flex-direction: column;
+                                justify-content: center;
+                                align-items: flex-end;
+                                p {
+                                    @include font-descripcionMediana2;
+                                    span {
+                                        font-weight: 600;
+                                        font-size: 1.5rem;
+                                    }
+                                }
+                            }
+                            .leftContainer {
+                                h2 {
+                                    @include font-titularMediano3;
+                                    font-family: "PP Editorial New";
+                                    font-weight: normal;
+                                    span {
+                                        font-family: Poppins, sans-serif;
+                                        font-weight: 300;
+                                    }
+                                }
+                            }
+                            &.verde {
+                                .leftContainer {
+                                    h2 {
+                                        color: $verde;
+                                        span {
+                                            color: $marron;
+                                        }
+                                    }
+                                }
+                            }
+                            &.morado {
+                                .leftContainer {
+                                    h2 {
+                                        color: $morado;
+                                        span {
+                                            color: $marron;
+                                        }
+                                    }
+                                }
+                            }
+                            &.amarrillo {
+                                .leftContainer {
+                                    h2 {
+                                        color: $amarrillo;
+                                        span {
+                                            color: $marron;
+                                        }
+                                    }
+                                }
+                            }
+                            &.rosado {
+                                .leftContainer {
+                                    h2 {
+                                        color: $rosadoOscuro;
+                                        span {
+                                            color: $marron;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                .carruselSection {
+                    border: 0px solid red;
+                    margin-bottom: 3rem;
+                    .productsCarruselContainer {
+                        .cardProduct {
+                            height: 490px;
+                            @media screen and (min-width: 992px) {
+                                height: 500px;
+                            }
+                        }
+                    }
+                    .headerContainer {
+                        margin-bottom: 1.5rem;
+                        h3 {
+                            @include font-titularMediano3;
+                            font-family: "PP Editorial New";
+                            font-weight: normal;
+                            span {
+                                font-family: Poppins, sans-serif;
+                                font-weight: 300;
+                            }
+                        }
+                    }
+                    &.verde {
+                        .headerContainer {
+                            h3 {
+                                color: $verde;
+                                span {
+                                    color: $marron;
+                                }
+                            }
+                        }
+                    }
+                    &.morado {
+                        .headerContainer {
+                            h3 {
+                                color: $morado;
+                                span {
+                                    color: $marron;
+                                }
+                            }
+                        }
+                    }
+                    &.amarrillo {
+                        .headerContainer {
+                            h3 {
+                                color: $amarrillo;
+                                span {
+                                    color: $marron;
+                                }
+                            }
+                        }
+                    }
+                    &.rosado {
+                        .headerContainer {
+                            h3 {
+                                color: $rosadoOscuro;
+                                span {
+                                    color: $marron;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            .siderColumn {
+                position: relative;
+                .sideBarSticky {
+                    position: static;
+                    max-height: none;
+                    overflow-y: visible;
+                    @media screen and (min-width: 992px) {
+                        position: sticky;
+                        top: 100px;
+                        z-index: 10;
+                        max-height: calc(100vh - 140px);
+                        overflow-y: auto;
+                    }
+                    &::-webkit-scrollbar {
+                        width: 6px;
+                    }
+                    &::-webkit-scrollbar-thumb {
+                        background: #d1d5db;
+                        border-radius: 10px;
+                    }
+                    &::-webkit-scrollbar-thumb:hover {
+                        background: #9ca3af;
+                    }
+                    .category-tree {
+                        background: white;
+                        border-radius: 12px;
+                        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+                        padding: 24px;
+                        height: fit-content;
+                    }
+
+                    .tree-header {
+                        display: flex;
+                        justify-content: space-between;
+                        align-items: center;
+                        margin-bottom: 24px;
+                        padding-bottom: 16px;
+                        border-bottom: 1px solid #eee;
+                    }
+
+                    .tree-title {
+                        @include font-titularMediano;
+                    }
+
+                    .all-categories-btn {
+                        background: none;
+                        border: 1px solid $verde;
+
+                        padding: 6px 14px;
+                        border-radius: 9999px;
+                        @include font-boton;
+                        color: $verde;
+                        cursor: pointer;
+                        transition: all 0.3s;
+                    }
+
+                    .all-categories-btn:hover {
+                        background: $verde;
+                        color: white;
+                    }
+
+                    /* Categoría Padre */
+                    .parent-category {
+                        display: flex;
+                        justify-content: space-between;
+                        align-items: center;
+                        padding: 12px 16px;
+                        margin-bottom: 4px;
+                        border-radius: 8px;
+                        cursor: pointer;
+                        transition: background 0.2s;
+                        &:hover {
+                            background-color: #f3f4f6;
+                        }
+                        .parent-content {
+                            display: flex;
+                            align-items: center;
+                            gap: 8px;
+                        }
+
+                        .category-name {
+                            @include font-descripcionMediana;
+                            font-weight: 500;
+                            text-transform: uppercase;
+                        }
+
+                        .product-count {
+                            @include font-descripcionMediana;
+                            font-weight: 500;
+                        }
+
+                        /* Botón expandir */
+                        .expand-btn {
+                            width: 28px;
+                            height: 28px;
+                            border: none;
+                            background: #e5e7eb;
+                            color: #4b5563;
+                            border-radius: 50%;
+                            font-size: 1.1rem;
+                            cursor: pointer;
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
+                        }
+                    }
+                    /* Subcategorías */
+                    .subcategories {
+                        max-height: 0;
+                        overflow: hidden;
+                        transition: max-height 0.3s ease;
+                        margin-left: 20px;
+                        &.expanded {
+                            max-height: 500px;
+                        }
+
+                        .subcategory-item {
+                            padding: 10px 16px;
+                            margin: 2px 0;
+                            border-radius: 8px;
+                            display: flex;
+                            justify-content: space-between;
+                            align-items: center;
+                            cursor: pointer;
+                            font-size: 0.95rem;
+                            color: #4b5563;
+                        }
+
+                        .subcategory-item:hover {
+                            background-color: #f8fafc;
+                        }
+
+                        .subcategory-name {
+                            @include font-titular;
+                        }
+
+                        .sub-product-count {
+                            @include font-titular;
+                        }
+                        &.rosado {
+                            .subcategory-name,
+                            .sub-product-count {
+                                color: $rosadoOscuro;
+                            }
+                        }
+                        &.morado {
+                            .subcategory-name,
+                            .sub-product-count {
+                                color: $morado;
+                            }
+                        }
+                        &.amarrillo {
+                            .subcategory-name,
+                            .sub-product-count {
+                                color: $amarrillo;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
