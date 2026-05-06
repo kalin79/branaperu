@@ -7,7 +7,7 @@ use Inertia\Inertia;
 use App\Models\Category;
 use App\Models\Product;
 use Illuminate\Http\Request;
-
+use Illuminate\Support\Str;
 class ProductController extends Controller
 {
     public function index()
@@ -115,5 +115,46 @@ class ProductController extends Controller
         }
 
         return array_unique($ids);
+    }
+    /**
+     * Detalle del producto
+     */
+    public function show(string $slug)
+    {
+        $product = Product::where('slug', $slug)
+            ->where('is_active', true)
+            ->with([
+                'category' => fn($q) => $q->with('parent'),
+                'media' => fn($q) => $q->where('is_active', true)->orderBy('order'),
+                'sections' => fn($q) => $q->where('is_active', true)->orderBy('orden'),
+                'features' => fn($q) => $q->wherePivot('is_active', true)
+                    ->orderBy('product_feature.sort_order'),
+                'relatedProductsFrontend' => fn($q) => $q
+                    ->with('media')
+                    ->take(8)
+            ])
+            ->firstOrFail();
+
+        // Append accesores
+        $product->append([
+            'formatted_price',
+            'formatted_old_price',
+            'cover_image_url'
+        ]);
+
+        // ✅ Append para TODOS los productos relacionados
+        $product->relatedProductsFrontend->each(function ($relatedProduct) {
+            $relatedProduct->append([
+                'formatted_price',
+                'formatted_old_price',
+                'cover_image_url'
+            ]);
+        });
+
+        return Inertia::render('Products/Show', [
+            'product' => $product,
+            'title_meta' => $product->meta_title ?? $product->name,
+            'description_meta' => $product->meta_description ?? Str::limit(strip_tags($product->short_description), 160),
+        ]);
     }
 }

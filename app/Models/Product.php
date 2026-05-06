@@ -149,6 +149,14 @@ class Product extends Model
             ->orderBy('product_related.sort_order');
     }
 
+    // Relación para Frontend (sin ambigüedad)
+    public function relatedProductsFrontend()
+    {
+        return $this->relatedProducts()
+            ->wherePivot('is_active', true)
+            ->where('products.is_active', true);   // Especificamos tabla
+    }
+
     // ====================== HELPERS ======================
 
     /**

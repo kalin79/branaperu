@@ -1,3 +1,416 @@
+.productoDetallaContainer {
+    padding-top: 5.35rem;
+    .seccionContainer {
+        padding: 5rem 0;
+        @media screen and (min-width: 992px) {
+            padding: 3rem 0 5rem;
+        }
+        .tabContainer {
+            border: 0px solid red;
+            margin-top: 2rem;
+            .tabsContent {
+                .content-wrapper {
+                    display: grid;
+                    grid-template-columns: repeat(1, 1fr);
+                    gap: 1rem;
+                    @media screen and (min-width: 992px) {
+                        grid-template-columns: repeat(2, 1fr);
+                        gap: 3rem;
+                    }
+                    .section-content {
+                        padding-top: 3.5rem;
+                        h3 {
+                            @include font-descripcionGrande;
+                            margin-bottom: 0.5rem;
+                        }
+                        p,
+                        ul li {
+                            @include font-descripcionTab;
+                            margin-bottom: 1rem;
+                        }
+
+                        ul li {
+                            list-style: disc;
+                            margin-left: 1.5rem;
+                        }
+                    }
+                    .section-video {
+                        width: 100%;
+                        height: 400px;
+                        iframe {
+                            width: 100%;
+                            height: 100%;
+                        }
+                    }
+                    .section-image {
+                        width: 100%;
+                        max-height: 600px;
+                        img {
+                            width: 100%;
+                            height: 100%;
+                            object-fit: cover;
+                        }
+                    }
+                }
+            }
+            .tabsHeader {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 1rem;
+                margin-bottom: 2rem;
+                @media screen and (min-width: 992px) {
+                    gap: 0px;
+                }
+                button {
+                    flex: 1;
+                    padding: 14px 28px;
+                    background: #f8f8f8;
+                    border: 0;
+                    font-size: 1.05rem;
+                    font-weight: 500;
+                    color: #666;
+                    cursor: pointer;
+                    transition: all 0.3s;
+                    white-space: nowrap;
+                    border-radius: 30px;
+
+                    &:hover {
+                        color: #333;
+                    }
+
+                    &.active {
+                        color: #fff; /* Color verde del diseño */
+                        font-weight: 600;
+                        background: $verde;
+                    }
+                }
+            }
+        }
+        .headerContainer {
+            h2 {
+                @include font-titularGrande;
+                font-family: "PP Editorial New";
+                font-weight: normal;
+                text-align: center;
+                span {
+                    font-family: Poppins, sans-serif;
+                    font-weight: 300;
+                    color: #222626;
+                }
+                br {
+                    display: block;
+                }
+            }
+        }
+    }
+    .headerContainer {
+        position: relative;
+        .layoutContainer {
+            display: grid;
+            grid-template-columns: repeat(1, 1fr);
+            gap: 0rem;
+            @media screen and (min-width: 992px) {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            .panelGallery {
+                background: #e5e5e3;
+                border-bottom: 2px solid $verde;
+                height: 650px;
+                .mediaGalleryContainer {
+                    .thumbs-splide {
+                        .thumb-image {
+                            height: 100%;
+                            width: 100%;
+                            object-fit: cover;
+                        }
+                    }
+                    .main-splide {
+                        height: 500px;
+                        .splide__track,
+                        .splide__slide,
+                        .splide__slide.is-active {
+                            height: 100% !important;
+                        }
+                        .imgAlignBox {
+                            border: 0px solid red;
+                            height: 100%;
+                            width: 100%;
+                            display: flex;
+                            flex-direction: column;
+                            justify-content: center;
+                            align-items: center;
+                            .videoBox {
+                                width: 100%;
+                                height: 400px;
+                                iframe {
+                                    width: 100%;
+                                    height: 100%;
+                                    object-fit: cover;
+                                }
+                            }
+                            .main-image {
+                                width: 300px;
+                                height: auto;
+                                object-fit: contain;
+                            }
+                        }
+                    }
+                }
+            }
+            .panelData {
+                background: #f2f2f2;
+                border-radius: 0;
+                overflow: hidden;
+                box-sizing: border-box;
+                padding: 2rem 1.5rem;
+                @media screen and (min-width: 992px) {
+                    padding: 2rem 3rem;
+                    border-radius: 0px 0 0 30px;
+                }
+                .beneficiosProductosBox {
+                    display: grid;
+                    grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+                    gap: 1rem;
+                    margin-top: 3rem;
+                    .cardBeneficio {
+                        border: 0px solid red;
+                        .dataCard {
+                            margin-top: 0.85rem;
+                            h5 {
+                                font-family: Poppins, sans-serif;
+                                font-size: 0.75rem;
+                                line-height: 1.25em;
+                                font-weight: 600;
+                                color: $marron;
+                                letter-spacing: -0.025em;
+                                text-align: center;
+                                br {
+                                    display: none;
+                                    @media screen and (min-width: 992px) {
+                                        display: block;
+                                    }
+                                }
+                            }
+                        }
+                        .iconCard {
+                            width: 80px;
+                            height: 80px;
+                            background: white;
+                            border-radius: 50%;
+                            display: flex;
+                            flex-direction: column;
+                            justify-content: center;
+                            align-items: center;
+                            margin: auto;
+                            img {
+                                height: 37px;
+                                width: auto;
+                                object-fit: contain;
+                            }
+                        }
+                    }
+                }
+                .relationProductsBox {
+                    height: 200px;
+                    display: flex;
+                    flex-direction: column;
+                    border: 1px solid #ddd;
+                    border-radius: 15px;
+                    overflow: hidden;
+                    background: white;
+                    padding: 1rem 1rem 0rem 2rem;
+                    box-sizing: border-box;
+                    margin-top: 2rem;
+                    .headerTitular {
+                        margin-bottom: 1rem;
+                        h4 {
+                            @include font-descripcion;
+                            font-weight: 500;
+                        }
+                    }
+                    .splideRelationProductoCarrusel {
+                        height: 100%;
+                        .relatedProductBox {
+                            display: flex;
+                            justify-content: flex-start;
+                            align-items: stretch;
+                            gap: 1rem;
+                            .btnAddCarBox {
+                                flex: 1;
+                                display: flex;
+                                flex-direction: column;
+                                justify-content: center;
+                                align-items: flex-end;
+                                padding-right: 1rem;
+                                button {
+                                    width: 40px;
+                                    height: 40px;
+                                    border-radius: 50%;
+                                    border: 1px solid rgba($verde, 1);
+                                    box-sizing: border-box;
+                                    @media screen and (min-width: 992px) {
+                                        width: 55px;
+                                        height: 50px;
+                                    }
+                                    span {
+                                        font-size: 2rem;
+                                        line-height: 0.75em;
+                                        font-weight: 300;
+                                        color: $verde;
+                                        letter-spacing: -0.025em;
+                                        text-align: center;
+                                    }
+                                }
+                            }
+                            .dataProduct {
+                                flex: 0 0 150px;
+                                display: flex;
+                                flex-direction: column;
+                                justify-content: center;
+                                align-items: flex-start;
+                                @media screen and (min-width: 992px) {
+                                    flex: 1;
+                                }
+                                h3 {
+                                    @include font-descripcionPequena;
+                                    color: $verde;
+                                    font-weight: 600;
+                                }
+                                h2,
+                                p {
+                                    @include font-descripcion;
+                                }
+                            }
+                            .imgProduct {
+                                flex: 0 0 80px;
+                                height: 100px;
+                                overflow: hidden;
+                                border-radius: 15px;
+                                @media screen and (min-width: 992px) {
+                                    flex: 0 0 100px;
+                                }
+                                img {
+                                    width: 100%;
+                                    height: 100%;
+                                    object-fit: cover;
+                                    object-position: center;
+                                }
+                            }
+                        }
+                    }
+                }
+                .btnCarContainer {
+                    margin-top: 1.5rem;
+                }
+                .contadorContainer {
+                    border: 0px solid red;
+                    display: flex;
+                    justify-content: flex-start;
+                    align-items: flex-start;
+                    gap: 0.5rem;
+                    margin-top: 1.5rem;
+                    button {
+                        flex: 0 0 55px;
+                        height: 50px;
+                        border-radius: 50%;
+                        border: 1px solid rgba($verde, 1);
+                        box-sizing: border-box;
+
+                        span {
+                            font-size: 2rem;
+                            line-height: 0.75em;
+                            font-weight: 300;
+                            color: $verde;
+                            letter-spacing: -0.025em;
+                            text-align: center;
+                        }
+                    }
+                    .cantidadBox {
+                        flex: 0 0 30px;
+                        height: 50px;
+                        box-sizing: border-box;
+                        font-family: Poppins, sans-serif;
+                        font-size: 1rem;
+                        line-height: 1.25em;
+                        font-weight: 400;
+                        color: #000000;
+                        letter-spacing: -0.025em;
+                        text-align: center;
+                        padding: 1rem 0;
+                    }
+                }
+                .categoryContainer {
+                    border: 1px solid $marron;
+                    display: inline-block;
+                    padding: 1rem 2rem;
+                    border-radius: 30px;
+                    margin-bottom: 1rem;
+                    h2 {
+                        @include font-titular;
+                        color: $marron;
+                    }
+                }
+                h1 {
+                    @include font-titularGrande2;
+                    position: relative;
+                    margin-bottom: 2rem;
+                    &:before {
+                        content: "";
+                        position: absolute;
+                        bottom: -1.5rem;
+                        left: 0;
+                        width: 70%;
+                        height: 4px;
+                        background: $marron;
+                    }
+                }
+                h3 {
+                    @include font-titular;
+                    font-weight: 400;
+                    color: $marron;
+                    span {
+                        font-weight: 600;
+                    }
+                }
+                .detalleProducto {
+                    margin-top: 1rem;
+                    .bodyContainer {
+                        border: 0px solid red;
+                        ul {
+                            li {
+                                list-style: disc;
+                                @include font-descripcion;
+                                padding: 0.25rem;
+                            }
+                        }
+                    }
+                    .headerContainder {
+                        display: flex;
+                        justify-content: flex-start;
+                        align-items: center;
+                        gap: 1rem;
+                        margin-bottom: 1rem;
+                        > div {
+                            &:nth-of-type(1) {
+                                display: inline-block;
+                                background: #423f3f;
+                                @include font-descripcion;
+                                padding: 0.5rem 1rem;
+                                color: white;
+                                border-radius: 30px;
+                            }
+                            &:nth-of-type(2) {
+                                @include font-descripcionGrande;
+                                font-weight: 500;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
 .productPageContainer {
     // Aqui trabajamos sobre la pagina de listado de productos
     .listaSectionContainer {

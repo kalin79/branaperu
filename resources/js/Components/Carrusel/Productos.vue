@@ -3,11 +3,8 @@
         <!-- <pre>{{ JSON.stringify(products, null, 2) }}</pre> -->
         <Splide :options="options" class="splideProductoCarrusel">
             <SplideSlide v-for="product in products" :key="product.id">
-                <Link :href="route('producto.show', { slug: product.slug })">
-                    <div
-                        :class="['cardProduct', category.color]"
-                        @click="goToProducto(product.slug)"
-                    >
+                <Link :href="`/producto/${product.slug}`">
+                    <div :class="['cardProduct', category.color]">
                         <div :class="['imgContainerCard']">
                             <img
                                 :src="`/storage/${product.cover_image}`"
