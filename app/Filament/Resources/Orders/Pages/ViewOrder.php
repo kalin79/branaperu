@@ -25,4 +25,9 @@ class ViewOrder extends ViewRecord
     {
         $this->js('window.print();');
     }
+
+    public function getView(): string
+    {
+        return 'filament.resources.orders.pages.view-order';
+    }
 }

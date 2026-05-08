@@ -20,7 +20,8 @@
                             :key="category.id"
                         >
                             <div class="headerContainer">
-                                <h3 v-html="$removeBreaks(category.name)"></h3>
+                                <!-- <h3 v-html="$removeBreaks(category.name)"></h3> -->
+                                <h3 v-html="category.name"></h3>
                             </div>
                             <div class="productsCarruselContainer">
                                 <ProductosCarrusel

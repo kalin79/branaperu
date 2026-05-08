@@ -29,25 +29,16 @@ const options = {
     <section class="sliderContainerHeroLegal">
         <Splide :options="options" class="itemContainer">
             <SplideSlide v-for="(item, index) in props.slides" :key="index">
-                <Link :href="item.link" v-if="item.link">
+                <div class="image-pc">
+                    <img :src="item.imagepc" :alt="item.titulo || 'Imagen'" />
+                </div>
+
+                <div class="image-mobil">
                     <img
-                        :src="item.imagepc"
-                        :srcset="`${item.imagemobile} 768w, ${item.imagepc} 1200w`"
-                        sizes="(max-width: 768px) 100vw, 1200px"
-                        :alt="item.titulo || 'Slide'"
-                        class="media"
-                        loading="lazy"
+                        :src="item.imagemobile"
+                        :alt="item.titulo || 'Imagen'"
                     />
-                </Link>
-                <img
-                    v-else
-                    :src="item.imagepc"
-                    :srcset="`${item.imagemobile} 768w, ${item.imagepc} 1200w`"
-                    sizes="(max-width: 768px) 100vw, 1200px"
-                    :alt="item.titulo || 'Slide'"
-                    class="media"
-                    loading="lazy"
-                />
+                </div>
             </SplideSlide>
         </Splide>
     </section>

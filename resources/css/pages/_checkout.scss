@@ -1,0 +1,326 @@
+.checkoutPageContainer {
+    padding: 8rem 0 5rem;
+    border: 0px solid red;
+    background: #fafcfd;
+    .headerContainer {
+        display: flex;
+        justify-content: flex-start;
+        align-items: flex-end;
+        gap: 1rem;
+        padding-bottom: 5rem;
+        .imgContainer {
+            flex: 0 0 40px;
+            img {
+                width: 100%;
+                height: auto;
+                object-fit: contain;
+            }
+        }
+        h1 {
+            flex: 1;
+            @include font-titularMediano3;
+            font-weight: 600;
+            margin: 0;
+            color: #423f3f;
+        }
+    }
+    .myPurchasesContainer {
+        display: grid;
+        grid-template-columns: repeat(12, 1fr);
+        gap: 2rem;
+        .myProductsContainer {
+            grid-column: 1 / span 7;
+
+            .cardCheckoutProduct {
+                display: flex;
+                justify-content: flex-start;
+                gap: 1rem;
+                margin: 0 0 0rem 0;
+                border-bottom: 1px solid #d7d7d7;
+                padding: 3rem 0;
+                .bodyCard {
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: flex-start;
+                    padding-right: 3.5rem;
+                    flex: 1;
+                    .rightContainer {
+                        display: flex;
+                        flex-direction: column;
+                        align-items: center;
+                        justify-content: flex-start;
+                        padding-top: 3rem;
+                        button {
+                            border: 0px solid red;
+                            margin-top: 1rem;
+                        }
+                        p {
+                            @include font-descripcionMediana;
+                            color: $marron;
+                            font-weight: 600;
+                        }
+                    }
+                    .leftContainer {
+                        padding-top: 1.5rem;
+                        .controlProduct {
+                            border: 1px solid #9d9d9d;
+                            padding: 0.5rem;
+                            display: flex;
+                            justify-content: space-between;
+                            border-radius: 30px;
+                            max-width: 122px;
+                            margin-top: 1rem;
+                            button {
+                                display: flex;
+                                flex-direction: column;
+                                justify-content: center;
+                                align-items: center;
+                                flex: 1;
+                                @include font-titularMediano;
+                                color: $marron;
+                            }
+                            span {
+                                flex: 1;
+                                @include font-titularMediano;
+                                color: $marron;
+                                text-align: center;
+                            }
+                        }
+                        h3 {
+                            @include font-descripcionPequena;
+                            font-weight: 600;
+                            color: $verde;
+                        }
+                        h2 {
+                            @include font-titular;
+                            color: $marron;
+                            font-weight: 500;
+                        }
+                        p {
+                            @include font-descripcionPequena;
+                            font-weight: 500;
+                            color: #959595;
+                            margin-top: 0.5rem;
+                        }
+                    }
+                }
+                .headerCard {
+                    flex: 0 0 190px;
+                    border: 1px solid $verde;
+                    overflow: hidden;
+                    border-radius: 10px;
+                    img {
+                        width: 100%;
+                        height: auto;
+                        object-fit: contain;
+                    }
+                }
+            }
+        }
+        .myDataContainer {
+            grid-column: 8 / span 4;
+            .formContainer {
+                form {
+                    .rowForm {
+                        margin-bottom: 1rem;
+                        &.separate {
+                            margin-top: 2rem;
+                        }
+                        .iconTarjetas {
+                            display: flex;
+                            justify-content: flex-start;
+                            > div {
+                                width: 48px;
+                                height: 40px;
+                                img {
+                                    width: 100%;
+                                    height: 100%;
+                                    object-fit: contain;
+                                }
+                            }
+                        }
+                        .btnForm {
+                            width: 100%;
+                            background: $marron;
+                            padding: 1.15rem 0;
+                            margin-top: 1rem;
+                        }
+                        .montoContainer {
+                            display: flex;
+                            justify-content: space-between;
+                            margin-bottom: 1rem;
+                            span {
+                                @include font-titular;
+                                font-weight: 500;
+                                color: #959595;
+                            }
+                            &.big {
+                                span {
+                                    @include font-descripcionExtraGrande;
+                                }
+                            }
+                        }
+                        .checkboxCustom {
+                            display: flex;
+                            align-items: center;
+                            gap: 10px;
+
+                            label {
+                                display: flex;
+                                justify-content: flex-start;
+                                align-items: center;
+                                gap: 0.65rem;
+                                p,
+                                a {
+                                    @include font-descripcionPequena;
+                                    color: #959595;
+                                    font-weight: 500;
+                                }
+                                a {
+                                    text-decoration: underline;
+                                }
+                            }
+
+                            input {
+                                display: none;
+
+                                &:checked + .checkmark {
+                                    background: #000;
+                                    border-color: #000;
+
+                                    &::after {
+                                        opacity: 1;
+                                        transform: rotate(45deg) scale(1);
+                                    }
+                                }
+                            }
+
+                            .checkmark {
+                                position: relative;
+
+                                width: 22px;
+                                height: 22px;
+
+                                border: 2px solid #999;
+                                border-radius: 6px;
+
+                                transition: all 0.3s ease;
+                                cursor: pointer;
+                                display: block;
+
+                                &::after {
+                                    content: "";
+
+                                    position: absolute;
+
+                                    left: 6px;
+                                    top: 1px;
+
+                                    width: 6px;
+                                    height: 12px;
+
+                                    border-right: 2px solid #fff;
+                                    border-bottom: 2px solid #fff;
+
+                                    transform: rotate(45deg) scale(0);
+                                    opacity: 0;
+
+                                    transition: all 0.2s ease;
+                                }
+                            }
+
+                            label {
+                                cursor: pointer;
+                                user-select: none;
+                            }
+                        }
+                        .selectCustom {
+                            position: relative;
+                            width: 100%;
+
+                            select {
+                                width: 100%;
+                                height: 48px;
+                                padding: 0 48px 0 16px;
+
+                                border: 1px solid #dcdcdc;
+                                border-radius: 10px;
+
+                                background-color: #fff;
+                                color: #222;
+
+                                font-size: 16px;
+                                cursor: pointer;
+
+                                appearance: none;
+                                -webkit-appearance: none;
+                                -moz-appearance: none;
+
+                                outline: none;
+                                transition: all 0.3s ease;
+
+                                &:focus {
+                                    border-color: #000;
+                                }
+                            }
+
+                            &::after {
+                                content: "";
+                                position: absolute;
+
+                                top: 50%;
+                                right: 16px;
+
+                                width: 10px;
+                                height: 10px;
+
+                                border-right: 2px solid #222;
+                                border-bottom: 2px solid #222;
+
+                                transform: translateY(-70%) rotate(45deg);
+
+                                pointer-events: none;
+                            }
+                        }
+                        .inputContainer {
+                            overflow: hidden;
+                            padding: 0.85rem 1rem;
+                            border: 1px solid #dcdcdc;
+                            background: white;
+                            border-radius: 10px;
+                            input[type="text"],
+                            input[type="tel"] {
+                                width: 100%;
+                                height: 100%;
+                                border: 0;
+                            }
+                        }
+                    }
+                }
+            }
+            .headerData {
+                display: flex;
+                justify-content: space-between;
+                padding-bottom: 1.5rem;
+                h2 {
+                    @include font-titular;
+                    color: $marron;
+                }
+                a {
+                    @include font-titular;
+                    color: #676767;
+                    position: relative;
+                    &:before {
+                        content: "";
+                        position: absolute;
+                        bottom: -0.05rem;
+                        left: 0;
+                        width: 100%;
+                        height: 1px;
+                        background: #676767;
+                    }
+                }
+            }
+        }
+    }
+}

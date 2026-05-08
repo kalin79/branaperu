@@ -1,14 +1,58 @@
 <script setup>
-import { Link } from "@inertiajs/vue3";
-import { Splide, SplideSlide } from "@splidejs/vue-splide";
-import "@splidejs/vue-splide/css"; // Estilos por defecto
+import { router } from "@inertiajs/vue3";
+import { inject, ref } from "vue";
+import { useCartDrawer } from "@/Composables/useCartDrawer";
 import GaleriaComponent from "@/Components/Carrusel/Galeria.vue";
 import SeccionesComponent from "@/Components/Producto/Secciones.vue";
-import { inject } from "vue";
+import { Splide, SplideSlide } from "@splidejs/vue-splide";
+import "@splidejs/vue-splide/css"; // Estilos por defecto
+const { openDrawer } = useCartDrawer();
+const iconBolsa = "/images/bolsa.svg";
+
 const $removeBreaks = inject("$removeBreaks");
 const $stripHtml = inject("$stripHtml");
-const iconBolsa = "/images/bolsa.svg";
-// Opciones de Splide (fácil de entender)
+
+const quantity = ref(1);
+
+const increment = () => {
+    quantity.value++;
+};
+
+const decrement = () => {
+    if (quantity.value > 0) {
+        quantity.value--;
+    }
+};
+const addToCart = () => {
+    if (quantity.value <= 0) return;
+
+    router.post(
+        "/cart/add",
+        {
+            product_id: props.product.id,
+            quantity: quantity.value,
+        },
+        {
+            onSuccess: () => {
+                quantity.value = 1;
+                openDrawer(); // ← Abre el drawer
+            },
+        },
+    );
+};
+
+const addToCartRelation = (relatedProduct) => {
+    router.post(
+        "/cart/add",
+        {
+            product_id: relatedProduct.id,
+            quantity: 1,
+        },
+        {
+            onSuccess: () => openDrawer(),
+        },
+    );
+};
 const options = {
     type: "loop",
     perPage: 1,
@@ -16,7 +60,7 @@ const options = {
     pagination: true,
     arrows: false,
 };
-defineProps({
+const props = defineProps({
     product: Object,
 });
 </script>
@@ -44,12 +88,17 @@ defineProps({
                             v-html="product.description"
                         ></div>
                         <div class="contadorContainer">
-                            <button><span>-</span></button>
-                            <div class="cantidadBox">0</div>
-                            <button><span>+</span></button>
+                            <button
+                                @click="decrement"
+                                :disabled="quantity === 0"
+                            >
+                                <span>-</span>
+                            </button>
+                            <div class="cantidadBox">{{ quantity }}</div>
+                            <button @click="increment"><span>+</span></button>
                         </div>
                         <div class="btnCarContainer">
-                            <button class="btn">
+                            <button @click="addToCart" class="btn">
                                 <img :src="iconBolsa" alt="" />
                                 <span>AÑADIR AL CARRITO</span>
                             </button>
@@ -99,7 +148,11 @@ defineProps({
                                             </div>
                                         </div>
                                         <div class="btnAddCarBox">
-                                            <button><span>+</span></button>
+                                            <button
+                                                @click="addToCartRelation(item)"
+                                            >
+                                                <span>+</span>
+                                            </button>
                                         </div>
                                     </div>
                                 </SplideSlide>

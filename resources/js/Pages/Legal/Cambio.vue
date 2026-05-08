@@ -1,5 +1,10 @@
 <template>
-    <AppLayout :title_meta="title_meta" :description_meta="description_meta">
+    <AppLayout
+        :cart="cart"
+        :total="total"
+        :title_meta="title_meta"
+        :description_meta="description_meta"
+    >
         <section class="legalPageContainer">
             <HeroComponent type="legal" :slides="banners" />
             <div class="container-fluid">
@@ -114,8 +119,8 @@ const banners = [
     {
         titulo: "Alquiler de maquinaria pesada",
         accion: "Ver equipos",
-        imagepc: "/images/bt3.webp",
-        imagemobile: "/images/bt3.webp",
+        imagepc: "/images/bt10.png",
+        imagemobile: "/images/bt10M.png",
     },
 ];
 defineOptions({
@@ -124,5 +129,7 @@ defineOptions({
 defineProps({
     title_meta: String,
     description_meta: String,
+    cart: { type: Object, default: () => ({}) },
+    total: { type: Number, default: 0 },
 });
 </script>

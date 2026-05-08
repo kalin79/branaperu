@@ -23,6 +23,12 @@ const options = {
     speed: 800,
     gap: 0,
 };
+const buildSrcset = (item) => {
+    const srcs = [];
+    if (item.imagemobile) srcs.push(`${item.imagemobile} 768w`);
+    if (item.imagepc) srcs.push(`${item.imagepc} 1200w`);
+    return srcs.join(", ");
+};
 </script>
 
 <template>
@@ -30,24 +36,30 @@ const options = {
         <Splide :options="options" class="itemContainer">
             <SplideSlide v-for="(item, index) in props.slides" :key="index">
                 <Link :href="item.link" v-if="item.link">
-                    <img
-                        :src="item.imagepc"
-                        :srcset="`${item.imagemobile} 768w, ${item.imagepc} 1200w`"
-                        sizes="(max-width: 768px) 100vw, 1200px"
-                        :alt="item.titulo || 'Slide'"
-                        class="media"
-                        loading="lazy"
-                    />
+                    <div class="image-pc">
+                        <img
+                            :src="item.imagepc"
+                            :alt="item.titulo || 'Imagen'"
+                        />
+                    </div>
+
+                    <div class="image-mobil">
+                        <img
+                            :src="item.imagemobile"
+                            :alt="item.titulo || 'Imagen'"
+                        />
+                    </div>
                 </Link>
-                <img
-                    v-else
-                    :src="item.imagepc"
-                    :srcset="`${item.imagemobile} 768w, ${item.imagepc} 1200w`"
-                    sizes="(max-width: 768px) 100vw, 1200px"
-                    :alt="item.titulo || 'Slide'"
-                    class="media"
-                    loading="lazy"
-                />
+                <div class="image-pc">
+                    <img :src="item.imagepc" :alt="item.titulo || 'Imagen'" />
+                </div>
+
+                <div class="image-mobil">
+                    <img
+                        :src="item.imagemobile"
+                        :alt="item.titulo || 'Imagen'"
+                    />
+                </div>
             </SplideSlide>
         </Splide>
     </section>

@@ -12,13 +12,9 @@ class ListPendingOrders extends ListRecords
 
     protected function getTableQuery(): \Illuminate\Database\Eloquent\Builder
     {
-        return Order::pending()->latest();
+        return Order::with(['user', 'district', 'currentPayment'])   // ← Cambiar a currentPayment
+            ->latest();
     }
 
     protected static ?string $title = 'Ventas Pendientes';
-
-    protected function getHeaderActions(): array
-    {
-        return [];
-    }
 }

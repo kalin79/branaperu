@@ -151,10 +151,21 @@ class ProductController extends Controller
             ]);
         });
 
+        // ==================== CARRITO ====================
+        $cart = session()->get('cart', []);
+        $total = 0;
+
+        foreach ($cart as $item) {
+            $total += ($item['price'] ?? 0) * ($item['quantity'] ?? 0);
+        }
+
         return Inertia::render('Products/Show', [
             'product' => $product,
             'title_meta' => $product->meta_title ?? $product->name,
             'description_meta' => $product->meta_description ?? Str::limit(strip_tags($product->short_description), 160),
+            // ✅ Datos del carrito (necesarios para el Drawer)
+            'cart' => $cart,
+            'total' => $total,
         ]);
     }
 }

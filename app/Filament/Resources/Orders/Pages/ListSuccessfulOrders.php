@@ -12,13 +12,9 @@ class ListSuccessfulOrders extends ListRecords
 
     protected function getTableQuery(): \Illuminate\Database\Eloquent\Builder
     {
-        return Order::successful()->latest();
+        return Order::with(['user', 'district', 'currentPayment'])   // ← Cambiar a currentPayment
+            ->latest();
     }
 
     protected static ?string $title = 'Ventas Exitosas (Pagadas)';
-
-    protected function getHeaderActions(): array
-    {
-        return [];
-    }
 }

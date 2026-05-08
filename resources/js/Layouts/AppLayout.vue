@@ -7,7 +7,7 @@
             <meta property="og:description" :content="description_meta" />
         </Head>
 
-        <Header />
+        <Header :cart="cart" :total="total" />
         <main>
             <slot />
         </main>
@@ -23,5 +23,7 @@ import Footer from "@/Components/Footer.vue";
 defineProps({
     title_meta: String,
     description_meta: String,
+    cart: { type: Object, default: () => ({}) }, // ← Añadir
+    total: { type: Number, default: 0 }, // ← Añadir
 });
 </script>

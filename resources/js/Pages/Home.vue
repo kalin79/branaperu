@@ -1,5 +1,10 @@
 <template>
-    <AppLayout :title_meta="title_meta" :description_meta="description_meta">
+    <AppLayout
+        :cart="cart"
+        :total="total"
+        :title_meta="title_meta"
+        :description_meta="description_meta"
+    >
         <div>
             <HeroComponent type="slider" :slides="banners" />
             <CuidadosComponent :data="cuidados" />
@@ -20,15 +25,22 @@ const banners = [
         titulo: "Alquiler de maquinaria pesada",
         accion: "Ver equipos",
         link: "/productos",
-        imagepc: "/images/1.webp",
-        imagemobile: "/images/1.webp",
+        imagepc: "/images/1.png",
+        imagemobile: "/images/m1.png",
     },
     {
         titulo: "Soluciones para construcción",
         accion: "Contáctanos",
         link: "/productos",
-        imagepc: "/images/2.webp",
-        imagemobile: "/images/2.webp",
+        imagepc: "/images/2.png",
+        imagemobile: "/images/m2.png",
+    },
+    {
+        titulo: "Soluciones para construcción",
+        accion: "Contáctanos",
+        link: "/productos",
+        imagepc: "/images/3.png",
+        imagemobile: "/images/m3.png",
     },
 ];
 
@@ -74,5 +86,7 @@ defineProps({
     },
     title_meta: String,
     description_meta: String,
+    cart: { type: Object, default: () => ({}) }, // ← Añadir
+    total: { type: Number, default: 0 }, // ← Añadir
 });
 </script>

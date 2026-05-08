@@ -4,7 +4,7 @@
         <!-- Título y cantidad -->
         <div :class="['grid-header', category.color || category.parent_color]">
             <div class="leftContainer">
-                <h2 v-html="$removeBreaks(category.name)"></h2>
+                <h2 v-html="category.name"></h2>
             </div>
             <div class="rightContainer">
                 <p v-if="products">

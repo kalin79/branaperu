@@ -1,5 +1,10 @@
 <template>
-    <AppLayout :title_meta="title_meta" :description_meta="description_meta">
+    <AppLayout
+        :cart="cart"
+        :total="total"
+        :title_meta="title_meta"
+        :description_meta="description_meta"
+    >
         <div class="productPageContainer">
             <HeroComponent type="slider" :slides="banners" />
             <ListadoComponent
@@ -23,8 +28,8 @@ const banners = [
         titulo: "Alquiler de maquinaria pesada",
         accion: "Ver equipos",
         link: "",
-        imagepc: "/images/productosbg.webp",
-        imagemobile: "/images/productosbg.webp",
+        imagepc: "/images/productosbg.png",
+        imagemobile: "/images/productosbgM.png",
     },
 ];
 // Importante: Desactivamos layout automático de Inertia
@@ -39,6 +44,8 @@ defineProps({
     products: Object, // viene cuando se selecciona una categoría
     title_meta: String,
     description_meta: String,
+    cart: { type: Object, default: () => ({}) }, // ← Añadir
+    total: { type: Number, default: 0 }, // ← Añadir
 });
 const handleCategorySelect = (category) => {
     // Guardamos la posición actual del scroll antes de navegar

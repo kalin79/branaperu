@@ -9,6 +9,11 @@ use App\Http\Controllers\Frontend\TerminosController;
 use App\Http\Controllers\Frontend\EntregaController;
 use App\Http\Controllers\Frontend\PrivacidadController;
 use App\Http\Controllers\Frontend\CambioController;
+use App\Http\Controllers\Webhook\MercadoPagoWebhookController;
+use App\Http\Controllers\Frontend\CartController;
+use App\Http\Controllers\CheckoutController;
+// use App\Http\Controllers\PaymentExportController;
+
 use Inertia\Inertia;
 
 // ====================== FRONTEND - PÁGINAS PÚBLICAS ======================
@@ -48,6 +53,19 @@ Route::get('/contacto', function () {
     return Inertia::render('Contact');
 })->name('contact');
 
+// ====================== CART ======================
+Route::post('/cart/add', [CartController::class, 'add'])->name('cart.add');
+Route::get('/cart', [CartController::class, 'index'])->name('cart.index');
+Route::post('/cart/remove', [CartController::class, 'remove'])->name('cart.remove');
+Route::post('/cart/update', [CartController::class, 'update'])->name('cart.update');
+// routes/web.php
+Route::get('/checkout', [CheckoutController::class, 'index'])
+    ->name('checkout.index');
+// ====================== E-coomerce ========================
+Route::post('/webhooks/mercadopago', [MercadoPagoWebhookController::class, 'handle']);
+Route::post('/checkout/process', [CheckoutController::class, 'process'])
+    ->name('checkout.process');
+
 // ====================== AUTENTICACIÓN ======================
 
 Route::middleware('guest')->group(function () {
@@ -85,11 +103,12 @@ Route::middleware('auth')->group(function () {
     })->name('orders.show');
 });
 
-// ====================== FILAMENT ADMIN ======================
 
-Route::prefix('admin')->name('admin.')->group(function () {
-    // Filament maneja sus propias rutas automáticamente
-});
+// ====================== EXPORTAR PAGOS ======================
+Route::get('/export-payments', [App\Http\Controllers\PaymentExportController::class, 'export'])
+    ->name('export.payments')
+    ->middleware('auth');
+
 
 // ====================== FALLBACK (404) ======================
 

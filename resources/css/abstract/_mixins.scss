@@ -68,6 +68,30 @@
         }
     }
 }
+@mixin font-titularMediano2 {
+    font-family: Poppins, sans-serif;
+    font-size: 1.75rem;
+    line-height: 1.25em;
+    font-weight: 400;
+    color: $marron;
+    letter-spacing: -0.025em;
+    text-align: center;
+    @media screen and (min-width: 992px) {
+        font-size: 1.85rem;
+        line-height: 1em;
+    }
+    @media screen and (min-width: 1400px) {
+        font-size: 2rem;
+        line-height: 1em;
+    }
+    br {
+        display: none;
+        @media screen and (min-width: 992px) {
+            display: block;
+        }
+    }
+}
+
 @mixin font-titularMediano3 {
     font-family: Poppins, sans-serif;
     font-size: 2rem;
@@ -158,6 +182,7 @@
         }
     }
 }
+
 @mixin font-subitulo {
     font-family: Poppins, sans-serif;
     font-size: 0.85rem;
@@ -178,6 +203,30 @@
 }
 
 // DESCRIPCIONES
+
+@mixin font-descripcionExtraGrande {
+    font-family: Poppins, sans-serif;
+    font-size: 1.25rem;
+    line-height: 1.25em;
+    font-weight: 600;
+    color: $marron;
+    letter-spacing: -0.025em;
+    text-align: left;
+    @media screen and (min-width: 992px) {
+        font-size: 1.35rem;
+        line-height: 1.35em;
+    }
+    @media screen and (min-width: 1400px) {
+        font-size: 1.5rem;
+        line-height: 1em;
+    }
+    br {
+        display: none;
+        @media screen and (min-width: 992px) {
+            display: block;
+        }
+    }
+}
 
 @mixin font-descripcionGrande {
     font-family: Poppins, sans-serif;

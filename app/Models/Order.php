@@ -6,7 +6,9 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+// use Illuminate\Database\Eloquent\Relations\HasOne;    // ← Agregar
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use App\Models\Payment;     // ← AGREGAR ESTA LÍNEA
 
 class Order extends Model
 {
@@ -57,6 +59,7 @@ class Order extends Model
         'notes',
     ];
 
+
     protected $casts = [
         'subtotal' => 'decimal:2',
         'discount_amount' => 'decimal:2',
@@ -72,18 +75,26 @@ class Order extends Model
     ];
 
     // ====================== ESTADOS ======================
-    const STATUS_PENDING = 'pending';
-    const STATUS_PAID = 'paid';
-    const STATUS_REJECTED = 'rejected';
+    const STATUS_PENDING = 'pending';      // Usuario inició el checkout (en formulario de pago)
+    const STATUS_ABANDONED = 'abandoned';    // Usuario abandonó el proceso de pago
+    const STATUS_PREPARING = 'preparing';    // Ya pagó → preparando pedido
+    const STATUS_SHIPPED = 'shipped';
+    const STATUS_DELIVERED = 'delivered';
     const STATUS_CANCELLED = 'cancelled';
+    const STATUS_REFUNDED = 'refunded';
+    const STATUS_RETURNED = 'returned';
 
     public static function getStatusOptions(): array
     {
         return [
-            self::STATUS_PENDING => 'Pendiente',
-            self::STATUS_PAID => 'Pagado',
-            self::STATUS_REJECTED => 'Pago Rechazado',
-            self::STATUS_CANCELLED => 'Anulado',
+            self::STATUS_PENDING => 'En Checkout',
+            self::STATUS_ABANDONED => 'Carrito Abandonado',
+            self::STATUS_PREPARING => 'Preparando',
+            self::STATUS_SHIPPED => 'Enviado',
+            self::STATUS_DELIVERED => 'Entregado',
+            self::STATUS_CANCELLED => 'Cancelado',
+            self::STATUS_REFUNDED => 'Reembolsado',
+            self::STATUS_RETURNED => 'Devuelto',
         ];
     }
 
@@ -91,32 +102,43 @@ class Order extends Model
     {
         return [
             self::STATUS_PENDING => 'warning',
-            self::STATUS_PAID => 'success',
-            self::STATUS_REJECTED => 'danger',
+            self::STATUS_ABANDONED => 'gray',
+            self::STATUS_PREPARING => 'info',
+            self::STATUS_SHIPPED => 'primary',
+            self::STATUS_DELIVERED => 'success',
             self::STATUS_CANCELLED => 'gray',
+            self::STATUS_REFUNDED => 'danger',
+            self::STATUS_RETURNED => 'danger',
         ];
     }
 
     // ====================== SCOPES ======================
-    public function scopePaid($query)
-    {
-        return $query->where('status', self::STATUS_PAID);
-    }
+    // public function scopePaid($query)
+    // {
+    //     return $query->where('status', self::STATUS_PAID);
+    // }
+
     public function scopePending($query)
     {
         return $query->where('status', self::STATUS_PENDING);
     }
-    public function scopeSuccessful($query)
-    {
-        return $query->where('status', self::STATUS_PAID);
-    }
-    public function scopeRejected($query)
-    {
-        return $query->where('status', self::STATUS_REJECTED);
-    }
+
+    // public function scopeSuccessful($query)
+    // {
+    //     return $query->where('status', self::STATUS_PAID);
+    // }
+
     public function scopeCancelled($query)
     {
         return $query->where('status', self::STATUS_CANCELLED);
+    }
+
+    // Nuevo: Órdenes cuyo último pago fue rechazado
+    public function scopeWithRejectedPayment($query)
+    {
+        return $query->whereHas('latestPayment', function ($q) {
+            $q->where('status', Payment::STATUS_REJECTED);
+        });
     }
 
     // ====================== RELACIONES ======================
@@ -140,6 +162,23 @@ class Order extends Model
         return $this->belongsTo(District::class, 'delivery_district_id');
     }
 
+    public function payments(): HasMany
+    {
+        return $this->hasMany(Payment::class);
+    }
+
+    public function latestPayment()
+    {
+        return $this->hasOne(Payment::class)->latestOfMany();
+    }
+
+    // Versión alternativa para tablas (más estable)
+    public function currentPayment()
+    {
+        return $this->hasOne(Payment::class)
+            ->latest('id');   // Ordena por ID descendente
+    }
+
     // ====================== HELPERS ======================
     public function getStatusLabelAttribute(): string
     {
@@ -151,10 +190,10 @@ class Order extends Model
         return self::getStatusColors()[$this->status] ?? 'gray';
     }
 
-    public function isPaid(): bool
-    {
-        return $this->status === self::STATUS_PAID;
-    }
+    // public function isPaid(): bool
+    // {
+    //     return $this->status === self::STATUS_PAID;
+    // }
 
     public function isPending(): bool
     {
@@ -179,5 +218,33 @@ class Order extends Model
     public function getCustomerEmailAttribute(): ?string
     {
         return $this->user?->email ?? $this->guest_email;
+    }
+
+    /**
+     * CAMPOS DEPRECATED (se mantendrán por compatibilidad temporal)
+     * 
+     * Ya no se deben usar para nueva lógica:
+     * - payment_id
+     * - payment_response
+     * - status  (ahora solo representa el estado del PEDIDO)
+     */
+
+    // Helper para saber si ya tiene pagos en la nueva estructura
+    public function hasPayments(): bool
+    {
+        return $this->payments()->exists();
+    }
+
+    /**
+     * Retorna el último pago (recomendado usar este en vez de payment_id)
+     */
+    public function getLatestPaymentAttribute()
+    {
+        return $this->latestPayment();   // ← Mejorado
+    }
+    // Relación para filtros de Filament (necesaria porque latestOfMany no funciona bien en filtros)
+    public function latestPaymentForFilter()
+    {
+        return $this->hasOne(Payment::class)->latestOfMany();
     }
 }

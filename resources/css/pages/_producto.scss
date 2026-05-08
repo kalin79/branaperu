@@ -669,6 +669,9 @@
                                         font-family: Poppins, sans-serif;
                                         font-weight: 300;
                                     }
+                                    br {
+                                        display: block;
+                                    }
                                 }
                             }
                             &.verde {
@@ -734,6 +737,9 @@
                             span {
                                 font-family: Poppins, sans-serif;
                                 font-weight: 300;
+                            }
+                            br {
+                                display: block;
                             }
                         }
                     }
