@@ -138,7 +138,7 @@ class CheckoutController extends Controller
         } else {
 
             // ✅ Detecta si estamos en local para no mandar back_urls inválidas
-            $isLocal = app()->environment('local');
+            // $isLocal = app()->environment('local');
 
             $preferenceData = [
                 'items' => $this->buildMpItemsFromOrder($order),
@@ -146,10 +146,11 @@ class CheckoutController extends Controller
                     'name' => $order->guest_name ?? '',
                     'surname' => $order->guest_last_name ?? '',
                     'email' => $order->guest_email ?? '',
-                    'phone' => [
-                        'area_code' => '51',                                    // ✅ sin "+"
-                        'number' => preg_replace('/\D/', '', $order->guest_phone ?? ''), // solo dígitos
-                    ],
+                    // 👇 cambio 1: solo manda phone si no está vacío
+                    'phone' => !empty($order->guest_phone) ? [
+                        'area_code' => '51',
+                        'number' => preg_replace('/\D/', '', $order->guest_phone),
+                    ] : null,
                 ],
                 'metadata' => [
                     'order_id' => $order->id,
@@ -159,15 +160,22 @@ class CheckoutController extends Controller
                 'external_reference' => $order->order_number,
             ];
 
-            // ✅ Solo manda back_urls + auto_return si NO estás en local
-            if (!$isLocal) {
+            // 👇 cambio 2: limpia nulls/vacíos del payer (justo después del array)
+            // $preferenceData['payer'] = array_filter($preferenceData['payer']);
+            $preferenceData['payer'] = array_filter($preferenceData['payer'], fn($v) => !is_null($v) && $v !== '');
+            // El resto sigue igual
+            $webhookUrl = route('webhooks.mercadopago');
+            $preferenceData['notification_url'] = $webhookUrl;
+
+
+            // Las back_urls solo si NO es localhost
+            if (!app()->environment('local')) {
                 $preferenceData['back_urls'] = [
                     'success' => route('checkout.success', $order->order_number),
                     'failure' => route('checkout.failure', $order->order_number),
                     'pending' => route('checkout.pending', $order->order_number),
                 ];
                 $preferenceData['auto_return'] = 'approved';
-                $preferenceData['notification_url'] = route('webhooks.mercadopago');
             }
 
             try {

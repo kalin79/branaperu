@@ -37,6 +37,7 @@ return [
     'mercadopago' => [
         'access_token' => env('MP_ACCESS_TOKEN'),   // ← debe coincidir con tu .env
         'public_key' => env('VITE_MP_PUBLIC_KEY'),
+        'webhook_secret' => env('MP_WEBHOOK_SECRET'),  // 👈 NUEVO
     ],
 
 ];

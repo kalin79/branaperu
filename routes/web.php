@@ -9,7 +9,6 @@ use App\Http\Controllers\Frontend\TerminosController;
 use App\Http\Controllers\Frontend\EntregaController;
 use App\Http\Controllers\Frontend\PrivacidadController;
 use App\Http\Controllers\Frontend\CambioController;
-use App\Http\Controllers\Webhook\MercadoPagoWebhookController;
 use App\Http\Controllers\Frontend\CartController;
 use App\Http\Controllers\CheckoutController;
 // use App\Http\Controllers\PaymentExportController;
@@ -64,8 +63,7 @@ Route::get('/checkout', [CheckoutController::class, 'index'])
 // routes/web.php
 
 // ====================== E-coomerce ========================
-Route::post('/webhooks/mercadopago', [MercadoPagoWebhookController::class, 'handle'])
-    ->name('webhooks.mercadopago');
+
 Route::post('/checkout/process', [CheckoutController::class, 'process'])
     ->name('checkout.process');
 Route::get('/checkout/payment/{order_number?}', [CheckoutController::class, 'payment'])
