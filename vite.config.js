@@ -28,6 +28,26 @@ export default defineConfig({
 
     build: {
         manifest: true,
+        // Aumentamos el límite para evitar el warning
+        chunkSizeWarningLimit: 1200,
+
+        // Configuración correcta para Rolldown
+        rollupOptions: {
+            output: {
+                // En Rolldown se usa esta sintaxis
+                manualChunks: (id) => {
+                    if (id.includes("node_modules")) {
+                        if (id.includes("vee-validate") || id.includes("zod")) {
+                            return "veevalidate";
+                        }
+                        if (id.includes("mercadopago")) {
+                            return "mercadopago";
+                        }
+                        return "vendor";
+                    }
+                },
+            },
+        },
     },
 
     // Configuración para SCSS

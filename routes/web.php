@@ -61,10 +61,22 @@ Route::post('/cart/update', [CartController::class, 'update'])->name('cart.updat
 // routes/web.php
 Route::get('/checkout', [CheckoutController::class, 'index'])
     ->name('checkout.index');
+// routes/web.php
+
 // ====================== E-coomerce ========================
-Route::post('/webhooks/mercadopago', [MercadoPagoWebhookController::class, 'handle']);
+Route::post('/webhooks/mercadopago', [MercadoPagoWebhookController::class, 'handle'])
+    ->name('webhooks.mercadopago');
 Route::post('/checkout/process', [CheckoutController::class, 'process'])
     ->name('checkout.process');
+Route::get('/checkout/payment/{order_number?}', [CheckoutController::class, 'payment'])
+    ->name('checkout.payment');
+
+Route::get('/checkout/success/{order_number}', [CheckoutController::class, 'success'])
+    ->name('checkout.success');
+Route::get('/checkout/failure/{order_number}', [CheckoutController::class, 'failure'])
+    ->name('checkout.failure');
+Route::get('/checkout/pending/{order_number}', [CheckoutController::class, 'pending'])
+    ->name('checkout.pending');
 
 // ====================== AUTENTICACIÓN ======================
 

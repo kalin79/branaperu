@@ -238,9 +238,10 @@ class Order extends Model
     /**
      * Retorna el último pago (recomendado usar este en vez de payment_id)
      */
+
     public function getLatestPaymentAttribute()
     {
-        return $this->latestPayment();   // ← Mejorado
+        return $this->latestPayment()->first();   // ← Esto devuelve el modelo Payment o null
     }
     // Relación para filtros de Filament (necesaria porque latestOfMany no funciona bien en filtros)
     public function latestPaymentForFilter()

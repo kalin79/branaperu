@@ -5,11 +5,12 @@ namespace App\Http\Controllers;
 use App\Services\OrderPaymentService;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
-use MercadoPago\Client\Preference\PreferenceClient;
 use MercadoPago\MercadoPagoConfig;
+use MercadoPago\Client\Preference\PreferenceClient;
 use App\Models\District;
 use App\Models\DeliveryConfiguration;
-
+use App\Models\Order;
+use Illuminate\Support\Facades\Log;
 class CheckoutController extends Controller
 {
     protected OrderPaymentService $orderService;
@@ -55,96 +56,246 @@ class CheckoutController extends Controller
     public function process(Request $request)
     {
         $validated = $request->validate([
-            'subtotal' => 'required|numeric|min:0',
-            'final_total' => 'required|numeric|min:0',
+            'guest_name' => 'required|string|max:255',
+            'guest_last_name' => 'required|string|max:255',
+            'guest_email' => 'required|email|max:255',
+            'guest_phone' => 'required|string|max:20',
+            'dni' => 'required|string|max:20',
             'delivery_district_id' => 'required|exists:districts,id',
             'shipping_address' => 'required|string|max:500',
-            'delivery_full_name' => 'required|string|max:255',
-            'guest_name' => 'required_if:user_id,null|string|max:255',
-            'guest_last_name' => 'required|string|max:255',
-            'guest_email' => 'required_if:user_id,null|email|max:255',
-            'guest_phone' => 'nullable|string|max:20',
             'delivery_reference' => 'nullable|string|max:255',
-            'notes' => 'nullable|string',
-            'accepted_terms' => 'required|boolean|accepted',
-            'accepted_privacy' => 'required|boolean|accepted',
+            'accepted_terms' => 'required|accepted',
+            'accepted_privacy' => 'required|accepted',
+
+            // Estos campos son obligatorios ahora
+            'subtotal' => 'required|numeric|min:0',
+            'final_total' => 'required|numeric|min:0',
+            'items' => 'required|array',
         ]);
 
-        // Preparar datos para la Orden
         $orderData = [
             'user_id' => auth()->id(),
             'subtotal' => $validated['subtotal'],
-            'discount_amount' => $request->discount_amount ?? 0,
+            'discount_amount' => $request->input('discount_amount', 0),
             'final_total' => $validated['final_total'],
-            'guest_name' => $validated['guest_name'] ?? null,
-            'guest_last_name' => $request->guest_last_name,        // ← Agregar esto
-            'guest_email' => $validated['guest_email'] ?? null,
-            'guest_phone' => $validated['guest_phone'] ?? null,
+
+            'guest_name' => $validated['guest_name'],
+            'guest_last_name' => $validated['guest_last_name'],
+            'guest_email' => $validated['guest_email'],
+            'guest_phone' => $validated['guest_phone'],
+
+            'delivery_full_name' => trim($validated['guest_name'] . ' ' . $validated['guest_last_name']),
             'delivery_district_id' => $validated['delivery_district_id'],
-            'delivery_cost' => $request->delivery_cost ?? 0,
             'shipping_address' => $validated['shipping_address'],
             'delivery_reference' => $validated['delivery_reference'] ?? null,
-            'delivery_full_name' => trim(($validated['guest_name'] ?? '') . ' ' . ($request->guest_last_name ?? '')),
-            'coupon_id' => $request->coupon_id,
-            'coupon_code' => $request->coupon_code,
-            'notes' => $validated['notes'],
+            'delivery_cost' => $request->input('delivery_cost', 0), // ← agregar
+            'dni' => $validated['dni'],
+
             'accepted_terms' => $validated['accepted_terms'],
             'accepted_privacy' => $validated['accepted_privacy'],
             'accepted_marketing' => $request->boolean('accepted_marketing', false),
+
+            'notes' => $request->input('notes'),
+            // ✅ ESTA LÍNEA es la que falta
+            'items' => $validated['items'],
         ];
 
-        // Crear Orden + Payment
+        // Crear la Orden (sin pago todavía)
         $order = $this->orderService->createOrderWithPayment($orderData, [
-            'provider' => 'mercadopago',
+            'provider' => 'mercadopago',   // solo como referencia
         ]);
+        // Limpiar el carrito de la sesión
+        session()->forget('cart');
+        // ✅ BIEN - redirect a una URL real
+        return redirect()->route('checkout.payment', $order->order_number);
+    }
 
-        // Configurar Mercado Pago
+    /**
+     * Página de pago con Mercado Pago
+     */
+    public function payment(string $order_number)
+    {
+        $order = Order::with(['items', 'district', 'latestPayment'])
+            ->where('order_number', $order_number)
+            ->firstOrFail();
+
+        if ($order->items->isEmpty()) {
+            return redirect()->route('cart.index')
+                ->with('error', 'Tu pedido no tiene productos.');
+        }
+
+        if ($order->latestPayment?->isApproved()) {
+            return redirect()->route('checkout.success', $order->order_number);
+        }
+
         MercadoPagoConfig::setAccessToken(config('services.mercadopago.access_token'));
 
         $client = new PreferenceClient();
+        $preferenceId = null;
 
-        $preference = $client->create([
-            'items' => $this->buildMpItems($request),
-            'payer' => [
-                'name' => $order->getCustomerNameAttribute(),
-                'email' => $order->getCustomerEmailAttribute(),
-            ],
-            'back_urls' => [
-                'success' => route('checkout.success', $order->order_number),
-                'failure' => route('checkout.failure'),
-                'pending' => route('checkout.pending'),
-            ],
-            'auto_return' => 'approved',
-            'external_reference' => $order->order_number,
-            'notification_url' => config('app.url') . '/webhooks/mercadopago',
-            'statement_descriptor' => 'BRANA',
-        ]);
+        if ($order->payment_response && isset($order->payment_response['preference_id'])) {
+            $preferenceId = $order->payment_response['preference_id'];
+        } else {
 
-        // Respuesta a Vue/Inertia
+            // ✅ Detecta si estamos en local para no mandar back_urls inválidas
+            $isLocal = app()->environment('local');
+
+            $preferenceData = [
+                'items' => $this->buildMpItemsFromOrder($order),
+                'payer' => [
+                    'name' => $order->guest_name ?? '',
+                    'surname' => $order->guest_last_name ?? '',
+                    'email' => $order->guest_email ?? '',
+                    'phone' => [
+                        'area_code' => '51',                                    // ✅ sin "+"
+                        'number' => preg_replace('/\D/', '', $order->guest_phone ?? ''), // solo dígitos
+                    ],
+                ],
+                'metadata' => [
+                    'order_id' => $order->id,
+                    'order_number' => $order->order_number,
+                ],
+                'statement_descriptor' => 'BRANA',
+                'external_reference' => $order->order_number,
+            ];
+
+            // ✅ Solo manda back_urls + auto_return si NO estás en local
+            if (!$isLocal) {
+                $preferenceData['back_urls'] = [
+                    'success' => route('checkout.success', $order->order_number),
+                    'failure' => route('checkout.failure', $order->order_number),
+                    'pending' => route('checkout.pending', $order->order_number),
+                ];
+                $preferenceData['auto_return'] = 'approved';
+                $preferenceData['notification_url'] = route('webhooks.mercadopago');
+            }
+
+            try {
+                $preference = $client->create($preferenceData);
+
+                $order->update([
+                    'payment_response' => array_merge(
+                        $order->payment_response ?? [],
+                        ['preference_id' => $preference->id]
+                    )
+                ]);
+
+                $preferenceId = $preference->id;
+
+            } catch (\MercadoPago\Exceptions\MPApiException $e) {
+                // ✅ Logging detallado: ahora SÍ vamos a ver qué dice MP
+                Log::error('Mercado Pago Preference Error (Detallado)', [
+                    'order_number' => $order_number,
+                    'message' => $e->getMessage(),
+                    'status_code' => $e->getApiResponse()?->getStatusCode(),
+                    'mp_response' => $e->getApiResponse()?->getContent(),
+                    'preference_data' => $preferenceData,
+                ]);
+
+                return redirect()->route('checkout.failure', $order_number)
+                    ->with('error', 'No pudimos generar el enlace de pago.');
+            } catch (\Exception $e) {
+                Log::error('Mercado Pago Generic Error', [
+                    'order_number' => $order_number,
+                    'error' => $e->getMessage(),
+                    'class' => get_class($e),
+                ]);
+
+                return redirect()->route('checkout.failure', $order_number)
+                    ->with('error', 'Error al procesar el pago.');
+            }
+        }
+
         return Inertia::render('Checkout/Payment', [
-            'preference' => $preference,
+            'order' => $order->only([
+                'id',
+                'order_number',
+                'subtotal',
+                'delivery_cost',
+                'final_total',
+                'status'
+            ]),
             'order_number' => $order->order_number,
-            'order' => $order->only(['id', 'order_number', 'final_total', 'status']),
+            'preference' => ['id' => $preferenceId],
+        ]);
+    }
+    /**
+     * Construye los items para Mercado Pago desde la Orden
+     */
+    private function buildMpItemsFromOrder(Order $order): array
+    {
+        return $order->items->map(function ($item) {
+            return [
+                'title' => $item->product_name,
+                'quantity' => (int) $item->quantity,
+                'unit_price' => (float) $item->unit_price,
+                'currency_id' => 'PEN',
+            ];
+        })->toArray();
+    }
+
+    /**
+     * Pago aprobado exitosamente
+     */
+    public function success(string $order_number)
+    {
+        $order = Order::with(['items', 'district', 'latestPayment'])
+            ->where('order_number', $order_number)
+            ->firstOrFail();
+
+        // Si el pago ya fue aprobado (vía webhook o manual)
+        if ($order->latestPayment?->isApproved()) {
+            $order->update(['status' => Order::STATUS_PREPARING]);
+        }
+
+        return Inertia::render('Checkout/Success', [
+            'order' => $order->only([
+                'order_number',
+                'final_total',
+                'guest_name',
+                'guest_email'
+            ]),
+            'items' => $order->items->map(fn($item) => [
+                'name' => $item->product_name,
+                'quantity' => $item->quantity,
+                'price' => $item->unit_price,
+            ])
         ]);
     }
 
     /**
-     * Construye los items para Mercado Pago
+     * Pago rechazado o fallido
      */
-    private function buildMpItems(Request $request): array
+    public function failure(string $order_number)
     {
-        $items = [];
+        $order = Order::with('latestPayment')
+            ->where('order_number', $order_number)
+            ->firstOrFail();
 
-        foreach ($request->items as $item) {
-            $items[] = [
-                'title' => $item['product_name'] ?? 'Producto',
-                'quantity' => (int) $item['quantity'],
-                'unit_price' => (float) $item['unit_price'],
-                'currency_id' => 'PEN',
-            ];
+        // Opcional: marcar como abandonado o mantener en pending
+        if (!$order->latestPayment?->isApproved()) {
+            $order->update(['status' => Order::STATUS_PENDING]);
         }
 
-        return $items;
+        return Inertia::render('Checkout/Failure', [
+            'order_number' => $order_number,
+            'order' => $order->only(['final_total', 'status']),
+            'error' => 'Tu pago fue rechazado. Puedes intentarlo nuevamente.'
+        ]);
+    }
+
+    /**
+     * Pago en proceso (pendiente de aprobación)
+     */
+    public function pending(string $order_number)
+    {
+        $order = Order::where('order_number', $order_number)->firstOrFail();
+
+        return Inertia::render('Checkout/Pending', [
+            'order_number' => $order_number,
+            'order' => $order->only(['final_total']),
+            'message' => 'Tu pago está siendo procesado. Te enviaremos un correo cuando sea confirmado.'
+        ]);
     }
 
 
