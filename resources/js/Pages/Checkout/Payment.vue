@@ -1,6 +1,6 @@
 <script setup>
 import CheckoutLayout from "@/Layouts/CheckoutLayout.vue";
-import { ref, computed, onMounted } from "vue";
+import { ref, computed, onMounted, watch } from "vue";
 import { router } from "@inertiajs/vue3";
 import axios from "axios";
 
@@ -13,6 +13,7 @@ const props = defineProps({
     districts: Object, // { departamento: { provincia: [districts...] } }
     locals: Array,
     mpPublicKey: String,
+    defaultDeliveryCost: { type: [Number, String], default: 0 }, // ← NUEVO
 });
 
 // ===== Estado del formulario =====
@@ -105,6 +106,26 @@ const isFactura = computed(() => form.value.document_type === "factura");
 
 const fmt = (v) => Number(v || 0).toFixed(2);
 
+// Busca un distrito por id en TODA la estructura (no solo la provincia actual)
+const findDistrictById = (id) => {
+    if (!id) return null;
+    for (const provs of Object.values(props.districts || {})) {
+        for (const dists of Object.values(provs)) {
+            const found = dists.find((d) => d.id === id);
+            if (found) return found;
+        }
+    }
+    return null;
+};
+
+// Recalcula final_total localmente usando los valores actuales de totals
+const recalcFinalTotal = () => {
+    const subtotal = Number(totals.value.subtotal || 0);
+    const discount = Number(totals.value.discount_amount || 0);
+    const delivery = Number(totals.value.delivery_cost || 0);
+    totals.value.final_total = Math.max(0, subtotal - discount + delivery);
+};
+
 // ===== Cupones =====
 const applyCoupon = async () => {
     if (!couponInput.value.trim()) return;
@@ -135,6 +156,7 @@ const applyCoupon = async () => {
 
 const removeCoupon = async () => {
     couponLoading.value = true;
+    couponError.value = null;
     try {
         const { data } = await axios.delete(
             `/checkout/${props.order.order_number}/coupon`,
@@ -142,7 +164,18 @@ const removeCoupon = async () => {
         if (data.success) {
             updateTotals(data.order);
             couponSuccess.value = null;
+            couponError.value = null;
+        } else {
+            couponError.value = data.message || "No se pudo quitar el cupón";
         }
+    } catch (e) {
+        console.error(
+            "Error removeCoupon:",
+            e.response?.status,
+            e.response?.data,
+        );
+        couponError.value =
+            e.response?.data?.message || "Error al quitar el cupón";
     } finally {
         couponLoading.value = false;
     }
@@ -160,6 +193,38 @@ const updateTotals = (orderData) => {
         discount_rule_percent: orderData.discount_rule_percent,
     };
 };
+
+// Devuelve el costo efectivo: si el distrito tiene 0 o null, usa el global
+const getEffectiveDeliveryCost = (district) => {
+    if (!district) return 0;
+    const cost = Number(district.delivery_cost || 0);
+    return cost > 0 ? cost : Number(props.defaultDeliveryCost || 0);
+};
+
+// Refresca delivery_cost cuando cambia el distrito
+watch(
+    () => form.value.delivery_district_id,
+    (newId) => {
+        if (!isDelivery.value) return;
+        const district = findDistrictById(newId);
+        totals.value.delivery_cost = getEffectiveDeliveryCost(district);
+        recalcFinalTotal();
+    },
+);
+
+// Refresca delivery_cost cuando cambia el método de entrega
+watch(
+    () => form.value.delivery_method,
+    (method) => {
+        if (method === "pickup") {
+            totals.value.delivery_cost = 0;
+        } else {
+            const district = findDistrictById(form.value.delivery_district_id);
+            totals.value.delivery_cost = getEffectiveDeliveryCost(district);
+        }
+        recalcFinalTotal();
+    },
+);
 
 // ===== Pagar =====
 const handlePayClick = async () => {
@@ -571,7 +636,7 @@ const goEditCart = () => router.visit("/cart");
                                     </div>
                                     <p
                                         v-if="errors.billing_ruc"
-                                        class="text-xs text-red-500 -mt-2"
+                                        class="has-errorInfo"
                                     >
                                         {{ errors.billing_ruc[0] }}
                                     </p>
@@ -759,14 +824,20 @@ const goEditCart = () => router.visit("/cart");
                                 </div>
                                 <div v-if="isDelivery" class="costoDeliveryBox">
                                     <span>Envío</span>
-                                    <span>
-                                        <template
-                                            v-if="totals.delivery_cost > 0"
+                                    <div>
+                                        <span
+                                            v-if="!form.delivery_district_id"
+                                            class="text-gray-400"
                                         >
-                                            S/ {{ fmt(totals.delivery_cost) }}
-                                        </template>
-                                        <template v-else>GRATIS</template>
-                                    </span>
+                                            Selecciona un distrito
+                                        </span>
+                                        <span v-else
+                                            >S/
+                                            {{
+                                                fmt(totals.delivery_cost)
+                                            }}</span
+                                        >
+                                    </div>
                                 </div>
 
                                 <div v-else class="retiroTiendaBox">

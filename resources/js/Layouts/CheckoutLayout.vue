@@ -2,9 +2,7 @@
     <div>
         <Head>
             <title>{{ title_meta }} | Brana</title>
-            <meta name="description" :content="description_meta" />
             <meta property="og:title" :content="title_meta + ' | Brana'" />
-            <meta property="og:description" :content="description_meta" />
         </Head>
 
         <HeaderPay />

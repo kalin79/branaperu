@@ -250,13 +250,20 @@ class OrderPaymentService
             'coupon_name' => null,
             'coupon_discount_value' => null,
             'discount_amount' => 0,
-            'final_total' => $this->calculateFinalTotal((float) $order->subtotal, 0, (float) $order->delivery_cost),
+            'final_total' => $this->calculateFinalTotal(
+                (float) $order->subtotal,
+                0,
+                (float) $order->delivery_cost
+            ),
         ]);
 
         // Reaplica descuento automático si el subtotal califica
-        $this->applyAutoDiscountIfEligible($order->fresh());
+        $order = $this->applyAutoDiscountIfEligible($order->fresh());
 
-        return ['success' => true, 'order' => $order->fresh(['items', 'district', 'pickupLocal'])];
+        return [
+            'success' => true,
+            'order' => $order->fresh(['items', 'district', 'pickupLocal']),
+        ];
     }
     /**
      * Aplica el descuento automático de la mejor regla activa.

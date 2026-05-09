@@ -1,7 +1,8 @@
 .paymentPageContainer {
     // border: 1px solid red;
     padding: 8rem 0 5rem;
-    .errorGlobal {
+    .errorGlobal,
+    .has-errorInfo {
         margin: 1.5rem 0;
         border: 3px solid rgb(248, 164, 164);
         background: rgb(255, 60, 60);
@@ -519,10 +520,12 @@
                 }
                 .purchaseCostsContainer {
                     // border: 1px solid red;
+                    margin-top: 2rem;
                     .subTotalBox,
                     .descAutoBox,
                     .dscCuponBox,
-                    .retiroTiendaBox {
+                    .retiroTiendaBox,
+                    .costoDeliveryBox {
                         display: flex;
                         justify-content: space-between;
                         gap: 1rem;

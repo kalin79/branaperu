@@ -192,6 +192,7 @@ class CheckoutController extends Controller
             'districts' => $districts,
             'locals' => $locals,
             'mpPublicKey' => config('services.mercadopago.public_key'),
+            'defaultDeliveryCost' => DeliveryConfiguration::defaultDeliveryCost(), // ← NUEVO
         ]);
     }
     /**
@@ -336,7 +337,7 @@ class CheckoutController extends Controller
         $deliveryCost = 0;
         if ($validated['delivery_method'] === 'delivery') {
             $district = District::find($validated['delivery_district_id']);
-            $deliveryCost = (float) ($district->delivery_cost ?? 0);
+            $deliveryCost = $district->effective_delivery_cost;
         }
 
         // Snapshot del local si pickup
@@ -443,16 +444,13 @@ class CheckoutController extends Controller
             'statement_descriptor' => 'BRANA',
             'external_reference' => $order->order_number,
             'notification_url' => route('webhooks.mercadopago'),
-        ];
-
-        if (!app()->environment('local')) {
-            $preferenceData['back_urls'] = [
+            'back_urls' => [
                 'success' => route('checkout.success', $order->order_number),
                 'failure' => route('checkout.failure', $order->order_number),
                 'pending' => route('checkout.pending', $order->order_number),
-            ];
-            $preferenceData['auto_return'] = 'approved';
-        }
+            ],
+            'auto_return' => 'approved',
+        ];
 
         try {
             $preference = $client->create($preferenceData);
