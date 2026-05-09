@@ -1,0 +1,569 @@
+.paymentPageContainer {
+    // border: 1px solid red;
+    padding: 8rem 0 5rem;
+    .errorGlobal {
+        margin: 1.5rem 0;
+        border: 3px solid rgb(248, 164, 164);
+        background: rgb(255, 60, 60);
+        border-radius: 5px;
+        padding: 1rem 1rem;
+        @include font-descripcion;
+        color: white;
+        font-weight: 500;
+    }
+    .layoudContainer {
+        display: grid;
+        grid-template-columns: repeat(12, 1fr);
+        gap: 1rem;
+        .inputContainer {
+            overflow: hidden;
+            padding: 0.85rem 1rem;
+            border: 1px solid #dcdcdc;
+            background: white;
+            border-radius: 10px;
+            input[type="text"],
+            input[type="tel"],
+            input[type="email"] {
+                width: 100%;
+                height: 100%;
+                border: 0;
+            }
+        }
+        .customRadio {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.6rem;
+            cursor: pointer;
+            font-size: 16px;
+            user-select: none;
+
+            input {
+                display: none;
+            }
+            p {
+                @include font-descripcionPequena;
+                color: #423f3f;
+            }
+
+            .checkmark {
+                width: 22px;
+                height: 22px;
+                border: 2px solid $verde;
+                border-radius: 50%;
+                position: relative;
+                transition: all 0.25s ease;
+                background: white;
+
+                &::after {
+                    content: "";
+                    position: absolute;
+                    left: 6px;
+                    top: 2px;
+                    width: 5px;
+                    height: 10px;
+                    border: solid white;
+                    border-width: 0 2px 2px 0;
+                    transform: rotate(45deg) scale(0);
+                    transition: transform 0.2s ease;
+                }
+            }
+
+            input:checked + .checkmark {
+                background: $verde;
+                border-color: $verde;
+
+                &::after {
+                    transform: rotate(45deg) scale(1);
+                }
+            }
+
+            input:disabled + .checkmark {
+                opacity: 0.5;
+                cursor: not-allowed;
+            }
+        }
+        .checkboxCustom {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+
+            label {
+                display: flex;
+                justify-content: flex-start;
+                align-items: center;
+                gap: 0.65rem;
+                p,
+                a {
+                    @include font-descripcionPequena;
+                    color: #959595;
+                    font-weight: 500;
+                }
+                a {
+                    text-decoration: underline;
+                }
+            }
+
+            input {
+                display: none;
+
+                &:checked + .checkmark {
+                    background: #000;
+                    border-color: #000;
+
+                    &::after {
+                        opacity: 1;
+                        transform: rotate(45deg) scale(1);
+                    }
+                }
+            }
+
+            .checkmark {
+                position: relative;
+
+                width: 22px;
+                height: 22px;
+
+                border: 2px solid #999;
+                border-radius: 6px;
+
+                transition: all 0.3s ease;
+                cursor: pointer;
+                display: block;
+
+                &::after {
+                    content: "";
+
+                    position: absolute;
+
+                    left: 6px;
+                    top: 1px;
+
+                    width: 6px;
+                    height: 12px;
+
+                    border-right: 2px solid #fff;
+                    border-bottom: 2px solid #fff;
+
+                    transform: rotate(45deg) scale(0);
+                    opacity: 0;
+
+                    transition: all 0.2s ease;
+                }
+            }
+
+            label {
+                cursor: pointer;
+                user-select: none;
+            }
+        }
+        .selectCustom {
+            position: relative;
+            width: 100%;
+
+            select {
+                width: 100%;
+                height: 48px;
+                padding: 0 48px 0 16px;
+
+                border: 1px solid #dcdcdc;
+                border-radius: 10px;
+
+                background-color: #fff;
+
+                @include font-descripcionPequena;
+                appearance: none;
+                -webkit-appearance: none;
+                -moz-appearance: none;
+
+                outline: none;
+                transition: all 0.3s ease;
+
+                &:focus {
+                    border-color: #000;
+                }
+            }
+
+            &::after {
+                content: "";
+                position: absolute;
+
+                top: 50%;
+                right: 16px;
+
+                width: 10px;
+                height: 10px;
+
+                border-right: 2px solid #222;
+                border-bottom: 2px solid #222;
+
+                transform: translateY(-70%) rotate(45deg);
+
+                pointer-events: none;
+            }
+        }
+        .rowInputForm {
+            border: 1px solid #dcdcdc;
+            padding: 1.65rem 1.5rem 1rem;
+            width: 100%;
+            display: flex;
+            justify-content: flex-start;
+            align-items: center;
+            gap: 0.5rem;
+            border-radius: 10px;
+            margin-bottom: 1rem;
+            position: relative;
+            input[type="text"],
+            input[type="tel"],
+            input[type="email"] {
+                background: transparent;
+                border: 0px;
+                width: 100%;
+                @include font-descripcionPequena;
+            }
+            label {
+                position: absolute;
+                font-family: Poppins, sans-serif !important;
+                pointer-events: none;
+                transition: 0.2s ease all;
+                top: 0.5rem;
+                left: 1.1rem;
+                font-size: 0.75rem;
+                color: #95959580;
+                padding: 0 4px;
+                border-radius: 4px;
+            }
+        }
+        .leftContainer {
+            grid-column: 1 / span 5;
+            .formContacto {
+                margin-top: 1rem;
+                h2 {
+                    @include font-titular;
+                    color: #423f3f;
+                    margin-bottom: 1rem;
+                }
+                .tabEntregaContainer {
+                    .tabBox {
+                        display: flex;
+                        justify-content: space-between;
+                        align-items: center;
+                        padding: 1rem 1rem;
+                        gap: 0.5rem;
+                        border: 1px solid #dbdbdb;
+                        border-radius: 10px;
+                        > div {
+                            display: flex;
+                            justify-content: flex-start;
+                            align-items: center;
+                            gap: 0.5rem;
+                        }
+                        .iconContainer {
+                            width: 28px;
+                            height: 28px;
+                            display: flex;
+                            flex-direction: column;
+                            justify-content: center;
+                            align-items: center;
+                            img {
+                                width: 100%;
+                                height: auto;
+                                object-fit: contain;
+                            }
+                        }
+                        &.active {
+                            background: #d9efff;
+                            border: 1px solid #9cdcff;
+                        }
+                        &:nth-of-type(1) {
+                            border-radius: 10px 10px 0px 0px;
+                            border-bottom: 0;
+                            &.active {
+                                border-radius: 10px 10px 0px 0px;
+                                border-bottom: 1px solid #9cdcff;
+                            }
+                        }
+                        &:nth-of-type(2) {
+                            border-radius: 0 0 10px 10px;
+                            border-top: 0;
+                            &.active {
+                                border-radius: 0px 0px 10px 10px;
+                                border-top: 1px solid #9cdcff;
+                            }
+                        }
+                    }
+                }
+            }
+            .contactoContainer {
+                h2 {
+                    @include font-titular;
+                    color: #423f3f;
+                    margin-bottom: 1rem;
+                }
+
+                .bottonContacto {
+                    .checkboxCustom {
+                        margin-top: 1rem;
+                    }
+                }
+            }
+            .tiendasContainer {
+                border: 0px solid red;
+                margin-top: 2rem;
+                h2 {
+                    @include font-titular;
+                    color: #423f3f;
+                }
+                p {
+                    @include font-descripcionPequena;
+                    color: #959595;
+                }
+                .listadoTiendasContainer {
+                    border: 0px solid blue;
+                    margin-top: 1rem;
+                    .itemTienda {
+                        display: flex;
+                        justify-content: space-between;
+                        align-items: center;
+                        gap: 0.5rem;
+                        padding: 1rem 1rem;
+                        border: 1px solid #dbdbdb;
+                        border-radius: 10px;
+                        .addressBox {
+                            display: flex;
+                            justify-content: space-between;
+                            align-items: center;
+                            gap: 0.5rem;
+                            .addresRight {
+                                p {
+                                    @include font-descripcionPequena2;
+                                    color: #959595;
+                                    text-align: right;
+                                }
+                                h4 {
+                                    @include font-descripcion;
+                                    color: #423f3f;
+                                    font-weight: 600;
+                                    text-align: right;
+                                }
+                            }
+                            .addresLeft {
+                                p {
+                                    @include font-descripcionPequena2;
+                                    color: #959595;
+                                    &.bold {
+                                        font-weight: 600;
+                                    }
+                                }
+                            }
+                        }
+                        &.active {
+                            border: 1px solid #9cdcff;
+                            background: #d9efff;
+                        }
+                    }
+                }
+            }
+            .deliveryContainer {
+                // border: 1px solid red;
+                margin-top: 1rem;
+                h2 {
+                    @include font-titular;
+                    color: #423f3f;
+                }
+                .selectoresContainer {
+                    margin-top: 1rem;
+                    .rowForm {
+                        margin-bottom: 1rem;
+                    }
+                }
+            }
+            .myDataContainer {
+                margin-top: 2rem;
+                h2 {
+                    @include font-titular;
+                    color: #423f3f;
+                }
+                .listDataBox {
+                    margin-top: 1rem;
+                }
+            }
+            .facturaContainer {
+                // border: 1px solid blue;
+                margin-top: 2rem;
+                h2 {
+                    @include font-titular;
+                    color: #423f3f;
+                    margin-bottom: 1rem;
+                }
+                .tabTipoDocContentBox {
+                    margin-top: 1rem;
+                }
+                .tabTipoDocumentoContainer {
+                    display: flex;
+                    justify-content: flex-start;
+                    align-items: center;
+                    gap: 1rem;
+                    margin-top: 1rem;
+                }
+            }
+            .btnContainer {
+                margin-top: 2.5rem;
+                button {
+                    width: 100%;
+                    @include font-boton;
+                    color: white;
+                }
+            }
+        }
+        .rightContainer {
+            grid-column: 7 / -1;
+            background: #f1f1f1;
+            .viewOrdenContainer {
+                padding: 5rem 2rem 0 5rem;
+                position: sticky;
+                top: 2rem;
+                .productBox {
+                    .itemProduct {
+                        display: flex;
+                        justify-content: flex-start;
+                        align-items: center;
+                        gap: 1rem;
+                        margin-bottom: 1rem;
+                        .infoContainer {
+                            flex: 1;
+                            display: flex;
+                            justify-content: space-between;
+                            gap: 1rem;
+                            h2 {
+                                @include font-descripcion;
+                                font-weight: 500;
+                                color: #423f3f;
+                            }
+                            p {
+                                @include font-descripcionPequena;
+                                font-weight: 500;
+                            }
+                        }
+                        .imgContainer {
+                            flex: 0 0 82px;
+                            position: relative;
+
+                            img {
+                                border: 1px solid #d7d7d7;
+                                border-radius: 10px;
+                                overflow: hidden;
+                            }
+                            span {
+                                position: absolute;
+                                top: 1.25rem;
+                                right: -0.65rem;
+                                background: $verde;
+                                width: 1.5rem;
+                                height: 1.5rem;
+                                border-radius: 50%;
+                                @include font-descripcionPequena;
+                                color: white;
+                                display: block;
+                                text-align: center;
+                                font-weight: 500;
+                            }
+                        }
+                    }
+                }
+                .cuponContainer {
+                    // border: 1px solid red;
+                    .cuponHabilitadoContainer {
+                        // border: 1px solid blue;
+                        display: flex;
+                        justify-content: flex-start;
+                        align-items: center;
+                        gap: 1rem;
+                        > div {
+                            margin-bottom: 1rem;
+                            button {
+                                background: #b60b0b;
+                                @include font-boton;
+                                color: white;
+                                border: 0;
+                            }
+                            p {
+                                background: $verdaEncendido;
+                                border: 1px solid $verdaEncendido;
+                                display: inline-block;
+                                padding: 0.5rem 1.5rem;
+                                border-radius: 10px;
+                                @include font-descripcionMediana2;
+                                color: white;
+                                font-weight: 600;
+                            }
+                        }
+                    }
+                    .boxCupon {
+                        display: flex;
+                        justify-content: flex-start;
+                        align-items: center;
+                        gap: 1rem;
+                        .rowInputForm {
+                            padding: 1rem;
+                            background: white;
+                            flex: 0 0 300px;
+                            margin: 0;
+                        }
+                        .btnCupon {
+                            flex: 1;
+                            button {
+                                color: white;
+                            }
+                        }
+                    }
+                }
+                .purchaseCostsContainer {
+                    // border: 1px solid red;
+                    .subTotalBox,
+                    .descAutoBox,
+                    .dscCuponBox,
+                    .retiroTiendaBox {
+                        display: flex;
+                        justify-content: space-between;
+                        gap: 1rem;
+                        margin-bottom: 1rem;
+                        span {
+                            @include font-descripcionMediana;
+                            font-weight: 600;
+                            color: #423f3f;
+                        }
+                    }
+                    .montoTotalBox {
+                        display: flex;
+                        justify-content: space-between;
+                        gap: 1rem;
+                        margin-bottom: 1rem;
+                        padding-bottom: 3rem;
+                        border-top: 1px solid #423f3f;
+                        padding-top: 1rem;
+                        h2 {
+                            @include font-descripcionGrande;
+                            font-weight: 600;
+                            color: #423f3f;
+                            span {
+                                @include font-descripcionPequena;
+                                color: #959595;
+                                font-weight: 500;
+                            }
+                        }
+                        p {
+                            @include font-descripcionGrande;
+                            font-weight: 600;
+                            color: #423f3f;
+                            span {
+                                @include font-descripcionPequena;
+                                color: #959595;
+                                font-weight: 500;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

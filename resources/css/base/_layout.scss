@@ -27,3 +27,19 @@
         padding: 0 max(2vw, calc(50% - 1200px));
     }
 }
+
+.container-fluid2 {
+    width: 100%;
+    padding: 0 0 0 5vw;
+
+    // ==================== BREAKPOINTS ====================
+
+    @media (min-width: 992px) {
+        padding: 0 0 0 2vw;
+    }
+
+    // Pantallas grandes (Desktop)
+    @media (min-width: 1600px) {
+        padding: 0 0 0 8vw;
+    }
+}

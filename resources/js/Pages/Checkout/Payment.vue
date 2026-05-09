@@ -1,107 +1,796 @@
 <script setup>
 import CheckoutLayout from "@/Layouts/CheckoutLayout.vue";
-import { onMounted, ref, computed } from "vue";
+import { ref, computed, onMounted } from "vue";
+import { router } from "@inertiajs/vue3";
+import axios from "axios";
 
+const iconDelivery = "/images/delivery.svg";
+const iconTienda = "/images/tienda.svg";
 const props = defineProps({
     CheckoutLayout: null,
-    preference: Object,
-    order_number: String,
     order: Object,
+    items: Array,
+    districts: Object, // { departamento: { provincia: [districts...] } }
+    locals: Array,
+    mpPublicKey: String,
 });
 
-const loading = ref(true);
+// ===== Estado del formulario =====
+const form = ref({
+    guest_name: props.order.guest_name || "",
+    guest_last_name: props.order.guest_last_name || "",
+    guest_email: props.order.guest_email || "",
+    guest_phone: props.order.guest_phone || "",
+    dni: props.order.dni || "",
 
-// Cargar SDK de Mercado Pago
+    delivery_method: props.order.delivery_method || "delivery",
+
+    // Delivery
+    delivery_district_id: props.order.delivery_district_id || null,
+    shipping_address: props.order.shipping_address || "",
+    delivery_reference: props.order.delivery_reference || "",
+
+    // Pickup
+    pickup_local_id: props.order.pickup_local_id || null,
+
+    // Documento
+    document_type: props.order.document_type || "boleta",
+    billing_ruc: props.order.billing_ruc || "",
+    billing_business_name: props.order.billing_business_name || "",
+    billing_address: props.order.billing_address || "",
+
+    accepted_marketing: !!props.order.accepted_marketing,
+});
+
+// ===== Totales reactivos (se actualizan tras aplicar cupón) =====
+const totals = ref({
+    subtotal: props.order.subtotal,
+    discount_amount: props.order.discount_amount,
+    delivery_cost: props.order.delivery_cost,
+    final_total: props.order.final_total,
+    coupon_code: props.order.coupon_code,
+    coupon_name: props.order.coupon_name,
+    discount_rule_name: props.order.discount_rule_name,
+    discount_rule_percent: props.order.discount_rule_percent,
+});
+
+// ===== Estado UI =====
+const couponInput = ref("");
+const couponLoading = ref(false);
+const couponError = ref(null);
+const couponSuccess = ref(null);
+
+const errors = ref({});
+const globalError = ref(null);
+const submitting = ref(false);
+
+// ===== Cascada de departamento → provincia → distrito =====
+const selectedDept = ref("");
+const selectedProvince = ref("");
+
+const departments = computed(() => Object.keys(props.districts || {}));
+
+const provinces = computed(() => {
+    if (!selectedDept.value) return [];
+    return Object.keys(props.districts[selectedDept.value] || {});
+});
+
+const districtsForProvince = computed(() => {
+    if (!selectedDept.value || !selectedProvince.value) return [];
+    return props.districts[selectedDept.value]?.[selectedProvince.value] || [];
+});
+
+// Si la orden ya tiene un distrito seleccionado, prellenar la cascada
 onMounted(() => {
-    const script = document.createElement("script");
-    script.src = "https://sdk.mercadopago.com/js/v2";
-    script.async = true;
-    script.onload = () => {
-        loading.value = false;
-        initMercadoPago();
-    };
-    document.body.appendChild(script);
+    if (form.value.delivery_district_id) {
+        for (const [dept, provs] of Object.entries(props.districts || {})) {
+            for (const [prov, dists] of Object.entries(provs)) {
+                const found = dists.find(
+                    (d) => d.id === form.value.delivery_district_id,
+                );
+                if (found) {
+                    selectedDept.value = dept;
+                    selectedProvince.value = prov;
+                    return;
+                }
+            }
+        }
+    }
 });
 
-const initMercadoPago = () => {
-    if (!props.preference?.id) return; // ✅ verifica el id, no el init_point
+// ===== Computeds =====
+const isDelivery = computed(() => form.value.delivery_method === "delivery");
+const isPickup = computed(() => form.value.delivery_method === "pickup");
+const isFactura = computed(() => form.value.document_type === "factura");
 
-    // Crear botón de pago
-    const mp = new MercadoPago(import.meta.env.VITE_MP_PUBLIC_KEY, {
-        locale: "es-PE",
-    });
+const fmt = (v) => Number(v || 0).toFixed(2);
 
-    mp.checkout({
-        preference: {
-            id: props.preference.id,
-        },
-        render: {
-            container: "#mp-checkout-btn",
-            label: "Pagar con Mercado Pago",
-        },
-    });
+// ===== Cupones =====
+const applyCoupon = async () => {
+    if (!couponInput.value.trim()) return;
+    couponLoading.value = true;
+    couponError.value = null;
+    couponSuccess.value = null;
+
+    try {
+        const { data } = await axios.post(
+            `/checkout/${props.order.order_number}/apply-coupon`,
+            { code: couponInput.value },
+        );
+
+        if (data.success) {
+            updateTotals(data.order);
+            couponSuccess.value = "Cupón aplicado correctamente";
+            couponInput.value = "";
+        } else {
+            couponError.value = data.message;
+        }
+    } catch (e) {
+        couponError.value =
+            e.response?.data?.message || "Error aplicando el cupón";
+    } finally {
+        couponLoading.value = false;
+    }
 };
 
-const fmt = (val) => Number(val || 0).toFixed(2);
+const removeCoupon = async () => {
+    couponLoading.value = true;
+    try {
+        const { data } = await axios.delete(
+            `/checkout/${props.order.order_number}/coupon`,
+        );
+        if (data.success) {
+            updateTotals(data.order);
+            couponSuccess.value = null;
+        }
+    } finally {
+        couponLoading.value = false;
+    }
+};
 
-// Guard por si order llega vacío
-const orderTotal = computed(() => fmt(props.order?.final_total));
-const orderSubtotal = computed(() => fmt(props.order?.subtotal));
-const orderDelivery = computed(() => fmt(props.order?.delivery_cost));
+const updateTotals = (orderData) => {
+    totals.value = {
+        subtotal: orderData.subtotal,
+        discount_amount: orderData.discount_amount,
+        delivery_cost: orderData.delivery_cost,
+        final_total: orderData.final_total,
+        coupon_code: orderData.coupon_code,
+        coupon_name: orderData.coupon_name,
+        discount_rule_name: orderData.discount_rule_name,
+        discount_rule_percent: orderData.discount_rule_percent,
+    };
+};
+
+// ===== Pagar =====
+const handlePayClick = async () => {
+    submitting.value = true;
+    errors.value = {};
+    globalError.value = null;
+
+    try {
+        // 1. Guardar info del cliente
+        const updateRes = await axios.post(
+            `/checkout/${props.order.order_number}/update-info`,
+            form.value,
+        );
+        if (updateRes.data.order) updateTotals(updateRes.data.order);
+
+        // 2. Crear preferencia en MP
+        const prefRes = await axios.post(
+            `/checkout/${props.order.order_number}/create-preference`,
+        );
+
+        // 3. Redirigir a MP
+        if (prefRes.data.init_point) {
+            window.location.href = prefRes.data.init_point;
+        } else {
+            globalError.value = "No se pudo iniciar el pago.";
+            submitting.value = false;
+        }
+    } catch (e) {
+        if (e.response?.status === 422) {
+            errors.value = e.response.data.errors || {};
+            globalError.value =
+                e.response.data.error ||
+                "Por favor revisa los campos marcados.";
+        } else {
+            globalError.value =
+                e.response?.data?.error || "Error procesando el pago.";
+        }
+        submitting.value = false;
+        // Scroll al primer error
+        setTimeout(() => {
+            const firstErr = document.querySelector(".has-error");
+            firstErr?.scrollIntoView({ behavior: "smooth", block: "center" });
+        }, 100);
+    }
+};
+
+const goEditCart = () => router.visit("/cart");
 </script>
 
 <template>
     <CheckoutLayout title="Finalizar Compra">
-        <div class="max-w-3xl mx-auto px-4 py-12">
-            <div class="bg-white rounded-3xl shadow-xl p-8">
-                <!-- Header -->
-                <div class="text-center mb-10">
-                    <h1 class="text-3xl font-bold text-gray-900">
-                        Pedido #{{ order_number }}
-                    </h1>
-                    <p class="text-2xl font-semibold text-emerald-600 mt-3">
-                        S/ {{ fmt(order.final_total) }}
-                    </p>
-                </div>
+        <div class="paymentPageContainer">
+            <div class="container-fluid2">
+                <div class="layoudContainer">
+                    <!-- ============= COLUMNA IZQUIERDA: FORMULARIO ============= -->
+                    <div class="leftContainer">
+                        <!-- Contacto -->
+                        <section class="contactoContainer">
+                            <h2>Contacto</h2>
+                            <div class="topContacto">
+                                <div class="inputContainer">
+                                    <input
+                                        v-model="form.guest_email"
+                                        type="email"
+                                        placeholder="Correo electrónico"
+                                        class="emailContainer"
+                                        :class="{
+                                            'has-error border-red-500':
+                                                errors.guest_email,
+                                        }"
+                                    />
+                                </div>
+                                <p v-if="errors.guest_email" class="errorForm">
+                                    {{ errors.guest_email[0] }}
+                                </p>
+                            </div>
+                            <div class="bottonContacto">
+                                <div class="checkboxCustom">
+                                    <label>
+                                        <input
+                                            type="checkbox"
+                                            v-model="form.accepted_marketing"
+                                        />
+                                        <span class="checkmark"></span>
+                                        <p>
+                                            Envíame un correo electrónico con
+                                            noticias y ofertas.
+                                        </p>
+                                    </label>
+                                </div>
+                            </div>
+                        </section>
 
-                <!-- Resumen -->
-                <div class="bg-gray-50 rounded-2xl p-6 mb-10">
-                    <h2 class="font-semibold mb-4">Resumen de tu pedido</h2>
-                    <div class="space-y-3 text-sm">
-                        <div class="flex justify-between">
-                            <span class="text-gray-600">Subtotal</span>
-                            <span>S/ {{ fmt(order.subtotal) }}</span>
+                        <!-- Entrega: delivery vs pickup -->
+                        <section class="formContacto">
+                            <h2>Entrega</h2>
+                            <div class="tabEntregaContainer">
+                                <label
+                                    class="tabBox"
+                                    :class="isDelivery ? 'active' : ''"
+                                >
+                                    <div>
+                                        <label class="customRadio">
+                                            <input
+                                                type="radio"
+                                                v-model="form.delivery_method"
+                                                value="delivery"
+                                            />
+                                            <span class="checkmark"></span>
+                                            <p>Envío delivery</p>
+                                        </label>
+                                    </div>
+                                    <div class="iconContainer">
+                                        <img
+                                            :src="iconDelivery"
+                                            alt="Envio de Delivery"
+                                        />
+                                    </div>
+                                </label>
+                                <label
+                                    class="tabBox"
+                                    :class="isPickup ? 'active' : ''"
+                                >
+                                    <div>
+                                        <label class="customRadio">
+                                            <input
+                                                type="radio"
+                                                v-model="form.delivery_method"
+                                                value="pickup"
+                                                class="text-emerald-600"
+                                            />
+                                            <span class="checkmark"></span>
+                                            <p>Retiro en tienda</p>
+                                        </label>
+                                    </div>
+                                    <div class="iconContainer">
+                                        <img
+                                            :src="iconTienda"
+                                            alt="Envio de Delivery"
+                                        />
+                                    </div>
+                                </label>
+                            </div>
+                        </section>
+
+                        <!-- Si es PICKUP: lista de tiendas -->
+                        <section v-if="isPickup" class="tiendasContainer">
+                            <h2>Sucursales en tienda</h2>
+                            <p>Seleccione la tienda de su preferencia.</p>
+                            <div class="listadoTiendasContainer">
+                                <div
+                                    v-for="local in locals"
+                                    :key="local.id"
+                                    class="itemTienda"
+                                    :class="
+                                        form.pickup_local_id === local.id
+                                            ? 'active'
+                                            : ''
+                                    "
+                                >
+                                    <label class="customRadio">
+                                        <input
+                                            type="radio"
+                                            v-model.number="
+                                                form.pickup_local_id
+                                            "
+                                            :value="local.id"
+                                            class="mt-1 text-emerald-600"
+                                        />
+                                        <span class="checkmark"></span>
+                                        <div class="addresLeft">
+                                            <p
+                                                class="bold"
+                                                v-html="local.title"
+                                            ></p>
+                                            <p v-html="local.address"></p>
+                                        </div>
+                                    </label>
+
+                                    <div class="addressBox">
+                                        <div class="addresRight">
+                                            <h4
+                                                v-if="local.label"
+                                                v-html="local.label"
+                                            ></h4>
+                                            <p
+                                                v-if="local.short_description"
+                                                v-html="local.short_description"
+                                            ></p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <p v-if="errors.pickup_local_id" class="has-error">
+                                {{ errors.pickup_local_id[0] }}
+                            </p>
+                        </section>
+
+                        <!-- Si es DELIVERY: dirección -->
+                        <section v-if="isDelivery" class="deliveryContainer">
+                            <h2>Dirección de envío</h2>
+
+                            <div class="selectoresContainer">
+                                <div class="rowForm">
+                                    <div class="selectCustom">
+                                        <select
+                                            v-model="selectedDept"
+                                            @change="
+                                                selectedProvince = '';
+                                                form.delivery_district_id =
+                                                    null;
+                                            "
+                                        >
+                                            <option value="">
+                                                Departamento
+                                            </option>
+                                            <option
+                                                v-for="d in departments"
+                                                :key="d"
+                                                :value="d"
+                                            >
+                                                {{ d }}
+                                            </option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="rowForm">
+                                    <div class="selectCustom">
+                                        <select
+                                            v-model="selectedProvince"
+                                            @change="
+                                                form.delivery_district_id = null
+                                            "
+                                            :disabled="!selectedDept"
+                                        >
+                                            <option value="">Provincia</option>
+                                            <option
+                                                v-for="p in provinces"
+                                                :key="p"
+                                                :value="p"
+                                            >
+                                                {{ p }}
+                                            </option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="rowForm">
+                                    <div class="selectCustom">
+                                        <select
+                                            v-model.number="
+                                                form.delivery_district_id
+                                            "
+                                            :disabled="!selectedProvince"
+                                            :class="{
+                                                'has-error':
+                                                    errors.delivery_district_id,
+                                            }"
+                                        >
+                                            <option :value="null">
+                                                Distrito
+                                            </option>
+                                            <option
+                                                v-for="d in districtsForProvince"
+                                                :key="d.id"
+                                                :value="d.id"
+                                            >
+                                                {{ d.district }}
+                                            </option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="rowInputForm">
+                                <input
+                                    v-model="form.shipping_address"
+                                    type="text"
+                                    class="w-full border rounded-lg px-4 py-2.5"
+                                    :class="{
+                                        'has-error border-red-500':
+                                            errors.shipping_address,
+                                    }"
+                                />
+                                <label>Dirección</label>
+                            </div>
+                            <div class="rowInputForm">
+                                <input
+                                    v-model="form.delivery_reference"
+                                    type="text"
+                                    class="w-full border rounded-lg px-4 py-2.5"
+                                />
+                                <label
+                                    >Referencia (opcional): casa, departamento,
+                                    etc.</label
+                                >
+                            </div>
+                        </section>
+
+                        <!-- Datos personales -->
+                        <section class="myDataContainer">
+                            <h2>Tus datos</h2>
+                            <div class="listDataBox">
+                                <div class="bloqueRow">
+                                    <div class="rowInputForm">
+                                        <input
+                                            v-model="form.guest_name"
+                                            type="text"
+                                            :class="{
+                                                'has-error': errors.guest_name,
+                                            }"
+                                        />
+                                        <label> Nombres </label>
+                                    </div>
+                                    <p v-if="errors.guest_name">
+                                        {{ errors.guest_name[0] }}
+                                    </p>
+                                </div>
+                                <div class="bloqueRow">
+                                    <div class="rowInputForm">
+                                        <input
+                                            v-model="form.guest_last_name"
+                                            type="text"
+                                            :class="{
+                                                'has-error':
+                                                    errors.guest_last_name,
+                                            }"
+                                        />
+                                        <label> Apellidos </label>
+                                    </div>
+                                    <p
+                                        v-if="errors.guest_last_name"
+                                        class="text-xs text-red-500 mt-1"
+                                    >
+                                        {{ errors.guest_last_name[0] }}
+                                    </p>
+                                </div>
+                                <div class="bloqueRow">
+                                    <div class="rowInputForm">
+                                        <input
+                                            v-model="form.dni"
+                                            type="text"
+                                            :class="{
+                                                'has-error': errors.dni,
+                                            }"
+                                        />
+                                        <label>DNI / CE </label>
+                                    </div>
+                                </div>
+                                <div class="bloqueRow">
+                                    <div class="rowInputForm">
+                                        <input
+                                            v-model="form.guest_phone"
+                                            type="tel"
+                                            placeholder="Celular"
+                                            :class="{
+                                                'has-error border-red-500':
+                                                    errors.guest_phone,
+                                            }"
+                                        />
+                                        <label>Celular</label>
+                                    </div>
+                                </div>
+                            </div>
+                        </section>
+
+                        <!-- Documento: boleta o factura -->
+                        <section class="facturaContainer">
+                            <h2>Documento de pago</h2>
+                            <div class="tabTipoDocumentoContainer">
+                                <label
+                                    class="customRadio"
+                                    :class="!isFactura ? 'active' : ''"
+                                >
+                                    <input
+                                        type="radio"
+                                        v-model="form.document_type"
+                                        value="boleta"
+                                    />
+                                    <span class="checkmark"></span>
+                                    <p>Boleta</p>
+                                </label>
+
+                                <label
+                                    class="customRadio"
+                                    :class="!isFactura ? 'active' : ''"
+                                >
+                                    <input
+                                        type="radio"
+                                        v-model="form.document_type"
+                                        value="factura"
+                                        class="text-emerald-600"
+                                    />
+                                    <span class="checkmark"></span>
+                                    <p>Factura</p>
+                                </label>
+                            </div>
+
+                            <div v-if="isFactura" class="tabTipoDocContentBox">
+                                <div class="bloqueRow">
+                                    <div class="rowInputForm">
+                                        <input
+                                            v-model="form.billing_ruc"
+                                            type="text"
+                                            maxlength="11"
+                                            :class="{
+                                                'has-error': errors.billing_ruc,
+                                            }"
+                                        />
+                                        <label>RUC (11 dígitos)</label>
+                                    </div>
+                                    <p
+                                        v-if="errors.billing_ruc"
+                                        class="text-xs text-red-500 -mt-2"
+                                    >
+                                        {{ errors.billing_ruc[0] }}
+                                    </p>
+                                </div>
+                                <div class="bloqueRow">
+                                    <div class="rowInputForm">
+                                        <input
+                                            v-model="form.billing_business_name"
+                                            type="text"
+                                            :class="{
+                                                'has-error':
+                                                    errors.billing_business_name,
+                                            }"
+                                        />
+                                        <label>Razón social</label>
+                                    </div>
+                                </div>
+                                <div class="bloqueRow">
+                                    <div class="rowInputForm">
+                                        <input
+                                            v-model="form.billing_address"
+                                            type="text"
+                                            :class="{
+                                                'has-error':
+                                                    errors.billing_address,
+                                            }"
+                                        />
+                                        <label>Dirección fiscal</label>
+                                    </div>
+                                </div>
+                            </div>
+                        </section>
+
+                        <!-- Error global y botón pagar -->
+                        <div v-if="globalError" class="errorGlobal">
+                            {{ globalError }}
                         </div>
-                        <div class="flex justify-between">
-                            <span class="text-gray-600">Envío</span>
-                            <span>S/ {{ fmt(order.delivery_cost) }}</span>
-                        </div>
-                        <div
-                            class="border-t pt-3 flex justify-between font-semibold text-base"
-                        >
-                            <span>Total</span>
-                            <span>S/ {{ fmt(order.final_total) }}</span>
+                        <div class="btnContainer">
+                            <button
+                                @click="handlePayClick"
+                                :disabled="submitting"
+                                class="btn"
+                            >
+                                {{
+                                    submitting ? "Procesando..." : "PAGAR AHORA"
+                                }}
+                            </button>
                         </div>
                     </div>
-                </div>
 
-                <!-- Botón Mercado Pago -->
-                <div id="mp-checkout-btn" class="mp-button-container"></div>
+                    <!-- ============= COLUMNA DERECHA: RESUMEN ============= -->
+                    <div class="rightContainer">
+                        <div class="viewOrdenContainer">
+                            <!-- Productos -->
+                            <div class="productBox">
+                                <div
+                                    v-for="item in items"
+                                    :key="item.id"
+                                    class="itemProduct"
+                                >
+                                    <div class="imgContainer">
+                                        <img
+                                            :src="`/storage/${item.product_image}`"
+                                        />
+                                        <span>
+                                            {{ item.quantity }}
+                                        </span>
+                                    </div>
+                                    <div class="infoContainer">
+                                        <div class="infoLeft">
+                                            <h2 v-html="item.product_name"></h2>
+                                            <p v-if="item.ml">
+                                                {{ item.ml }}
+                                            </p>
+                                        </div>
+                                        <div class="infoRight">
+                                            <h2>S/ {{ fmt(item.subtotal) }}</h2>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
 
-                <p v-if="loading" class="text-center text-gray-500 mt-6">
-                    Cargando pasarela segura...
-                </p>
+                            <!-- Cupón -->
+                            <div class="cuponContainer">
+                                <div
+                                    v-if="!totals.coupon_code"
+                                    class="boxCupon"
+                                >
+                                    <div class="rowInputForm">
+                                        <input
+                                            v-model="couponInput"
+                                            type="text"
+                                            placeholder="Código de descuento"
+                                            class="flex-1 border rounded-lg px-3 py-2 text-sm"
+                                            @keyup.enter="applyCoupon"
+                                        />
+                                    </div>
 
-                <div class="text-center mt-8 text-xs text-gray-400">
-                    Pago 100% seguro • Procesado por Mercado Pago
+                                    <div class="btnCupon">
+                                        <button
+                                            @click="applyCoupon"
+                                            :disabled="
+                                                couponLoading || !couponInput
+                                            "
+                                            class="btn"
+                                        >
+                                            {{
+                                                couponLoading
+                                                    ? "..."
+                                                    : "Aplicar"
+                                            }}
+                                        </button>
+                                    </div>
+                                </div>
+                                <div v-else class="cuponHabilitadoContainer">
+                                    <div>
+                                        <p>✓ {{ totals.coupon_code }}</p>
+                                        <!-- <p
+                                            v-if="totals.coupon_name"
+                                            class="text-xs text-emerald-600"
+                                        >
+                                            {{ totals.coupon_name }}
+                                        </p> -->
+                                    </div>
+                                    <div>
+                                        <button
+                                            @click="removeCoupon"
+                                            :disabled="couponLoading"
+                                            class="btn"
+                                        >
+                                            Quitar
+                                        </button>
+                                    </div>
+                                </div>
+                                <p
+                                    v-if="couponError"
+                                    class="text-xs text-red-500 mt-2"
+                                >
+                                    {{ couponError }}
+                                </p>
+                            </div>
+
+                            <!-- Totales -->
+                            <div class="purchaseCostsContainer">
+                                <div class="subTotalBox">
+                                    <span>Subtotal</span>
+                                    <span>S/ {{ fmt(totals.subtotal) }}</span>
+                                </div>
+
+                                <!-- Descuento automático (sin cupón) -->
+                                <div
+                                    v-if="
+                                        totals.discount_rule_name &&
+                                        !totals.coupon_code
+                                    "
+                                    class="descAutoBox"
+                                >
+                                    <span>
+                                        {{ totals.discount_rule_name }}
+                                        <span
+                                            v-if="totals.discount_rule_percent"
+                                            class="text-xs text-emerald-500"
+                                        >
+                                            ({{
+                                                totals.discount_rule_percent
+                                            }}%)
+                                        </span>
+                                    </span>
+                                    <span>
+                                        -S/
+                                        {{ fmt(totals.discount_amount) }}
+                                    </span>
+                                </div>
+
+                                <!-- Descuento por cupón -->
+                                <div
+                                    v-if="totals.coupon_code"
+                                    class="dscCuponBox"
+                                >
+                                    <span>Cupón {{ totals.coupon_code }}</span>
+                                    <span>
+                                        -S/
+                                        {{ fmt(totals.discount_amount) }}
+                                    </span>
+                                </div>
+                                <div v-if="isDelivery" class="costoDeliveryBox">
+                                    <span>Envío</span>
+                                    <span>
+                                        <template
+                                            v-if="totals.delivery_cost > 0"
+                                        >
+                                            S/ {{ fmt(totals.delivery_cost) }}
+                                        </template>
+                                        <template v-else>GRATIS</template>
+                                    </span>
+                                </div>
+
+                                <div v-else class="retiroTiendaBox">
+                                    <span>Envío</span>
+                                    <span>GRATIS (retiro en tienda)</span>
+                                </div>
+
+                                <div class="montoTotalBox">
+                                    <p>
+                                        Total <br />
+                                        <span
+                                            >Incluye S/ 29.14 de impuestos</span
+                                        >
+                                    </p>
+                                    <h2>
+                                        <span>PEN</span>
+                                        S/ {{ fmt(totals.final_total) }}
+                                    </h2>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
     </CheckoutLayout>
 </template>
-
-<style scoped>
-.mp-button-container {
-    min-height: 50px;
-}
-</style>

@@ -8,6 +8,12 @@ use App\Models\Payment;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use App\Models\Product;
+
+use App\Models\Coupon;
+use App\Models\DiscountRule;
+// use App\Models\District;
+// use App\Models\Local;
+
 class OrderPaymentService
 {
     /**
@@ -188,5 +194,132 @@ class OrderPaymentService
             'refunded' => Payment::STATUS_REFUNDED,
             default => Payment::STATUS_PENDING,
         };
+    }
+
+    /**
+     * Aplica un cupón a la orden.
+     * REEMPLAZA cualquier descuento automático previo.
+     */
+    public function applyCoupon(Order $order, string $couponCode): array
+    {
+        $coupon = Coupon::valid()->whereRaw('UPPER(code) = ?', [strtoupper(trim($couponCode))])->first();
+
+        if (!$coupon) {
+            return ['success' => false, 'message' => 'Cupón no válido o expirado.'];
+        }
+
+        if ($order->subtotal < $coupon->min_purchase_amount) {
+            return [
+                'success' => false,
+                'message' => 'Tu pedido debe ser mínimo S/ ' . number_format($coupon->min_purchase_amount, 2) . ' para usar este cupón.',
+            ];
+        }
+
+        $discount = $coupon->calculateDiscount((float) $order->subtotal);
+
+        if ($discount <= 0) {
+            return ['success' => false, 'message' => 'Este cupón no aplica a tu pedido.'];
+        }
+
+        // Aplicar cupón → REEMPLAZA descuento automático
+        $order->update([
+            'coupon_id' => $coupon->id,
+            'coupon_code' => $coupon->code,
+            'coupon_name' => $coupon->name,
+            'coupon_discount_value' => $coupon->discount_value,
+
+            // Limpiar descuento automático
+            'discount_rule_name' => null,
+            'discount_rule_min_amount' => null,
+            'discount_rule_percent' => null,
+
+            'discount_amount' => $discount,
+            'final_total' => $this->calculateFinalTotal((float) $order->subtotal, $discount, (float) $order->delivery_cost),
+        ]);
+
+        return ['success' => true, 'order' => $order->fresh(['items', 'district', 'pickupLocal'])];
+    }
+    /**
+     * Quita el cupón y reaplica descuento automático si corresponde.
+     */
+    public function removeCoupon(Order $order): array
+    {
+        $order->update([
+            'coupon_id' => null,
+            'coupon_code' => null,
+            'coupon_name' => null,
+            'coupon_discount_value' => null,
+            'discount_amount' => 0,
+            'final_total' => $this->calculateFinalTotal((float) $order->subtotal, 0, (float) $order->delivery_cost),
+        ]);
+
+        // Reaplica descuento automático si el subtotal califica
+        $this->applyAutoDiscountIfEligible($order->fresh());
+
+        return ['success' => true, 'order' => $order->fresh(['items', 'district', 'pickupLocal'])];
+    }
+    /**
+     * Aplica el descuento automático de la mejor regla activa.
+     * NO se ejecuta si ya hay un cupón aplicado.
+     */
+    public function applyAutoDiscountIfEligible(Order $order): Order
+    {
+        if ($order->hasCouponApplied()) {
+            return $order;
+        }
+
+        $rule = DiscountRule::active()
+            ->where('min_amount', '<=', $order->subtotal)
+            ->orderBy('discount_percent', 'desc')
+            ->first();
+
+        if (!$rule) {
+            // Limpia si antes había descuento automático y ya no califica
+            if ($order->hasAutoDiscountApplied()) {
+                $order->update([
+                    'discount_rule_name' => null,
+                    'discount_rule_min_amount' => null,
+                    'discount_rule_percent' => null,
+                    'discount_amount' => 0,
+                    'final_total' => $this->calculateFinalTotal((float) $order->subtotal, 0, (float) $order->delivery_cost),
+                ]);
+            }
+            return $order->fresh();
+        }
+
+        $discount = $rule->calculateDiscount((float) $order->subtotal);
+
+        $order->update([
+            'discount_rule_name' => $rule->name,
+            'discount_rule_min_amount' => $rule->min_amount,
+            'discount_rule_percent' => $rule->discount_percent,
+            'discount_amount' => $discount,
+            'final_total' => $this->calculateFinalTotal((float) $order->subtotal, $discount, (float) $order->delivery_cost),
+        ]);
+
+        return $order->fresh();
+    }
+    /**
+     * Recalcula totales tras cambiar delivery_cost o subtotal.
+     */
+    public function recalculateTotals(Order $order): Order
+    {
+        $discount = (float) $order->discount_amount;
+        $order->update([
+            'final_total' => $this->calculateFinalTotal(
+                (float) $order->subtotal,
+                $discount,
+                (float) $order->delivery_cost
+            ),
+        ]);
+        return $order->fresh();
+    }
+
+    /**
+     * Fórmula central del total final.
+     */
+    private function calculateFinalTotal(float $subtotal, float $discount, ?float $deliveryCost): float
+    {
+        return round(max(0, $subtotal - $discount + ($deliveryCost ?? 0)), 2);
     }
 }

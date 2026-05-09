@@ -6,16 +6,15 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-// use Illuminate\Database\Eloquent\Relations\HasOne;    // ← Agregar
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use App\Models\Payment;     // ← AGREGAR ESTA LÍNEA
+use App\Models\Payment;
 
 class Order extends Model
 {
     use HasFactory, SoftDeletes;
 
     protected $fillable = [
-        'user_id',                    // null = compra como invitado
+        'user_id',
         'order_number',
 
         // Montos
@@ -23,13 +22,13 @@ class Order extends Model
         'discount_amount',
         'final_total',
 
-        // === SNAPSHOT DEL CUPÓN ===
+        // Snapshot del cupón
         'coupon_id',
         'coupon_code',
         'coupon_name',
         'coupon_discount_value',
 
-        // === SNAPSHOT DE LA REGLA DE DESCUENTO AUTOMÁTICO ===
+        // Snapshot de la regla de descuento automático
         'discount_rule_name',
         'discount_rule_min_amount',
         'discount_rule_percent',
@@ -39,26 +38,41 @@ class Order extends Model
         'payment_id',
         'payment_response',
 
-        // Información del cliente (invitado o registrado)
+        // Cliente
         'guest_name',
+        'guest_last_name',     // ← NUEVO
         'guest_email',
         'guest_phone',
+        'dni',                 // ← NUEVO
 
-        // Delivery
+        // Método de entrega
+        'delivery_method',     // ← NUEVO: 'delivery' | 'pickup'
+
+        // Si delivery
         'delivery_district_id',
         'delivery_cost',
         'shipping_address',
         'delivery_reference',
         'delivery_full_name',
 
-        // Consentimientos del usuario (importante para trazabilidad legal)
+        // Si pickup (snapshot del local)
+        'pickup_local_id',       // ← NUEVO
+        'pickup_local_name',     // ← NUEVO
+        'pickup_local_address',  // ← NUEVO
+
+        // Documento
+        'document_type',         // ← NUEVO: 'boleta' | 'factura'
+        'billing_ruc',           // ← NUEVO
+        'billing_business_name', // ← NUEVO
+        'billing_address',       // ← NUEVO
+
+        // Consentimientos
         'accepted_terms',
         'accepted_privacy',
         'accepted_marketing',
 
         'notes',
     ];
-
 
     protected $casts = [
         'subtotal' => 'decimal:2',
@@ -74,15 +88,39 @@ class Order extends Model
         'accepted_marketing' => 'boolean',
     ];
 
-    // ====================== ESTADOS ======================
-    const STATUS_PENDING = 'pending';      // Usuario inició el checkout (en formulario de pago)
-    const STATUS_ABANDONED = 'abandoned';    // Usuario abandonó el proceso de pago
-    const STATUS_PREPARING = 'preparing';    // Ya pagó → preparando pedido
+    // ====================== ESTADOS DE LA ORDEN ======================
+    const STATUS_PENDING = 'pending';
+    const STATUS_ABANDONED = 'abandoned';
+    const STATUS_PREPARING = 'preparing';
     const STATUS_SHIPPED = 'shipped';
     const STATUS_DELIVERED = 'delivered';
     const STATUS_CANCELLED = 'cancelled';
     const STATUS_REFUNDED = 'refunded';
     const STATUS_RETURNED = 'returned';
+
+    // ====================== MÉTODOS DE ENTREGA ======================
+    const DELIVERY_METHOD_DELIVERY = 'delivery';
+    const DELIVERY_METHOD_PICKUP = 'pickup';
+
+    public static function getDeliveryMethodOptions(): array
+    {
+        return [
+            self::DELIVERY_METHOD_DELIVERY => 'Envío a domicilio',
+            self::DELIVERY_METHOD_PICKUP => 'Retiro en tienda',
+        ];
+    }
+
+    // ====================== TIPOS DE DOCUMENTO ======================
+    const DOCUMENT_TYPE_BOLETA = 'boleta';
+    const DOCUMENT_TYPE_FACTURA = 'factura';
+
+    public static function getDocumentTypeOptions(): array
+    {
+        return [
+            self::DOCUMENT_TYPE_BOLETA => 'Boleta',
+            self::DOCUMENT_TYPE_FACTURA => 'Factura',
+        ];
+    }
 
     public static function getStatusOptions(): array
     {
@@ -113,27 +151,16 @@ class Order extends Model
     }
 
     // ====================== SCOPES ======================
-    // public function scopePaid($query)
-    // {
-    //     return $query->where('status', self::STATUS_PAID);
-    // }
-
     public function scopePending($query)
     {
         return $query->where('status', self::STATUS_PENDING);
     }
-
-    // public function scopeSuccessful($query)
-    // {
-    //     return $query->where('status', self::STATUS_PAID);
-    // }
 
     public function scopeCancelled($query)
     {
         return $query->where('status', self::STATUS_CANCELLED);
     }
 
-    // Nuevo: Órdenes cuyo último pago fue rechazado
     public function scopeWithRejectedPayment($query)
     {
         return $query->whereHas('latestPayment', function ($q) {
@@ -162,6 +189,11 @@ class Order extends Model
         return $this->belongsTo(District::class, 'delivery_district_id');
     }
 
+    public function pickupLocal(): BelongsTo  // ← NUEVA
+    {
+        return $this->belongsTo(Local::class, 'pickup_local_id');
+    }
+
     public function payments(): HasMany
     {
         return $this->hasMany(Payment::class);
@@ -172,11 +204,14 @@ class Order extends Model
         return $this->hasOne(Payment::class)->latestOfMany();
     }
 
-    // Versión alternativa para tablas (más estable)
     public function currentPayment()
     {
-        return $this->hasOne(Payment::class)
-            ->latest('id');   // Ordena por ID descendente
+        return $this->hasOne(Payment::class)->latest('id');
+    }
+
+    public function latestPaymentForFilter()
+    {
+        return $this->hasOne(Payment::class)->latestOfMany();
     }
 
     // ====================== HELPERS ======================
@@ -190,11 +225,6 @@ class Order extends Model
         return self::getStatusColors()[$this->status] ?? 'gray';
     }
 
-    // public function isPaid(): bool
-    // {
-    //     return $this->status === self::STATUS_PAID;
-    // }
-
     public function isPending(): bool
     {
         return $this->status === self::STATUS_PENDING;
@@ -205,6 +235,39 @@ class Order extends Model
         return $this->discount_amount > 0;
     }
 
+    // === Helpers método de entrega ===
+    public function isDelivery(): bool
+    {
+        return $this->delivery_method === self::DELIVERY_METHOD_DELIVERY;
+    }
+
+    public function isPickup(): bool
+    {
+        return $this->delivery_method === self::DELIVERY_METHOD_PICKUP;
+    }
+
+    // === Helpers documento ===
+    public function isBoleta(): bool
+    {
+        return $this->document_type === self::DOCUMENT_TYPE_BOLETA;
+    }
+
+    public function isFactura(): bool
+    {
+        return $this->document_type === self::DOCUMENT_TYPE_FACTURA;
+    }
+
+    // === Helpers descuento ===
+    public function hasCouponApplied(): bool
+    {
+        return !empty($this->coupon_code);
+    }
+
+    public function hasAutoDiscountApplied(): bool
+    {
+        return !empty($this->discount_rule_name);
+    }
+
     public function getTotalAttribute(): float
     {
         return (float) $this->final_total;
@@ -212,7 +275,9 @@ class Order extends Model
 
     public function getCustomerNameAttribute(): string
     {
-        return $this->user?->name ?? $this->guest_name ?? 'Cliente invitado';
+        return $this->user?->name
+            ?? trim(($this->guest_name ?? '') . ' ' . ($this->guest_last_name ?? ''))
+            ?: 'Cliente invitado';
     }
 
     public function getCustomerEmailAttribute(): ?string
@@ -220,32 +285,13 @@ class Order extends Model
         return $this->user?->email ?? $this->guest_email;
     }
 
-    /**
-     * CAMPOS DEPRECATED (se mantendrán por compatibilidad temporal)
-     * 
-     * Ya no se deben usar para nueva lógica:
-     * - payment_id
-     * - payment_response
-     * - status  (ahora solo representa el estado del PEDIDO)
-     */
-
-    // Helper para saber si ya tiene pagos en la nueva estructura
     public function hasPayments(): bool
     {
         return $this->payments()->exists();
     }
 
-    /**
-     * Retorna el último pago (recomendado usar este en vez de payment_id)
-     */
-
     public function getLatestPaymentAttribute()
     {
-        return $this->latestPayment()->first();   // ← Esto devuelve el modelo Payment o null
-    }
-    // Relación para filtros de Filament (necesaria porque latestOfMany no funciona bien en filtros)
-    public function latestPaymentForFilter()
-    {
-        return $this->hasOne(Payment::class)->latestOfMany();
+        return $this->latestPayment()->first();
     }
 }

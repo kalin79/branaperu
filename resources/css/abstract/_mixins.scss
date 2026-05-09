@@ -367,6 +367,30 @@
     }
 }
 
+@mixin font-descripcionPequena2 {
+    font-family: Poppins, sans-serif;
+    font-size: 0.75rem;
+    line-height: 1.5em;
+    font-weight: 400;
+    color: #727272;
+    letter-spacing: -0.025em;
+    text-align: left;
+    @media screen and (min-width: 992px) {
+        font-size: 0.75rem;
+        line-height: 1.5em;
+    }
+    @media screen and (min-width: 1400px) {
+        font-size: 0.75rem;
+        line-height: 1.5em;
+    }
+    br {
+        display: none;
+        @media screen and (min-width: 992px) {
+            display: block;
+        }
+    }
+}
+
 // PARA EL FOOTER Y HEADER
 
 @mixin font-menu-header {

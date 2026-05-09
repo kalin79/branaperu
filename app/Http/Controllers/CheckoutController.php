@@ -11,6 +11,8 @@ use App\Models\District;
 use App\Models\DeliveryConfiguration;
 use App\Models\Order;
 use Illuminate\Support\Facades\Log;
+
+use App\Models\Local;
 class CheckoutController extends Controller
 {
     protected OrderPaymentService $orderService;
@@ -115,7 +117,7 @@ class CheckoutController extends Controller
      */
     public function payment(string $order_number)
     {
-        $order = Order::with(['items', 'district', 'latestPayment'])
+        $order = Order::with(['items', 'district', 'pickupLocal', 'latestPayment'])
             ->where('order_number', $order_number)
             ->firstOrFail();
 
@@ -128,103 +130,68 @@ class CheckoutController extends Controller
             return redirect()->route('checkout.success', $order->order_number);
         }
 
-        MercadoPagoConfig::setAccessToken(config('services.mercadopago.access_token'));
+        // Aplica descuento automático al cargar (si corresponde y no hay cupón)
+        $this->orderService->applyAutoDiscountIfEligible($order);
+        $order->refresh();
 
-        $client = new PreferenceClient();
-        $preferenceId = null;
+        // Cargar datos para los selectores
+        $districts = District::active()
+            ->select(['id', 'department', 'province', 'district', 'delivery_cost', 'ubigeo'])
+            ->get()
+            ->groupBy('department')
+            ->map(fn($items) => $items->groupBy('province'));
 
-        if ($order->payment_response && isset($order->payment_response['preference_id'])) {
-            $preferenceId = $order->payment_response['preference_id'];
-        } else {
-
-            // ✅ Detecta si estamos en local para no mandar back_urls inválidas
-            // $isLocal = app()->environment('local');
-
-            $preferenceData = [
-                'items' => $this->buildMpItemsFromOrder($order),
-                'payer' => [
-                    'name' => $order->guest_name ?? '',
-                    'surname' => $order->guest_last_name ?? '',
-                    'email' => $order->guest_email ?? '',
-                    // 👇 cambio 1: solo manda phone si no está vacío
-                    'phone' => !empty($order->guest_phone) ? [
-                        'area_code' => '51',
-                        'number' => preg_replace('/\D/', '', $order->guest_phone),
-                    ] : null,
-                ],
-                'metadata' => [
-                    'order_id' => $order->id,
-                    'order_number' => $order->order_number,
-                ],
-                'statement_descriptor' => 'BRANA',
-                'external_reference' => $order->order_number,
-            ];
-
-            // 👇 cambio 2: limpia nulls/vacíos del payer (justo después del array)
-            // $preferenceData['payer'] = array_filter($preferenceData['payer']);
-            $preferenceData['payer'] = array_filter($preferenceData['payer'], fn($v) => !is_null($v) && $v !== '');
-            // El resto sigue igual
-            $webhookUrl = route('webhooks.mercadopago');
-            $preferenceData['notification_url'] = $webhookUrl;
-
-
-            // Las back_urls solo si NO es localhost
-            if (!app()->environment('local')) {
-                $preferenceData['back_urls'] = [
-                    'success' => route('checkout.success', $order->order_number),
-                    'failure' => route('checkout.failure', $order->order_number),
-                    'pending' => route('checkout.pending', $order->order_number),
-                ];
-                $preferenceData['auto_return'] = 'approved';
-            }
-
-            try {
-                $preference = $client->create($preferenceData);
-
-                $order->update([
-                    'payment_response' => array_merge(
-                        $order->payment_response ?? [],
-                        ['preference_id' => $preference->id]
-                    )
-                ]);
-
-                $preferenceId = $preference->id;
-
-            } catch (\MercadoPago\Exceptions\MPApiException $e) {
-                // ✅ Logging detallado: ahora SÍ vamos a ver qué dice MP
-                Log::error('Mercado Pago Preference Error (Detallado)', [
-                    'order_number' => $order_number,
-                    'message' => $e->getMessage(),
-                    'status_code' => $e->getApiResponse()?->getStatusCode(),
-                    'mp_response' => $e->getApiResponse()?->getContent(),
-                    'preference_data' => $preferenceData,
-                ]);
-
-                return redirect()->route('checkout.failure', $order_number)
-                    ->with('error', 'No pudimos generar el enlace de pago.');
-            } catch (\Exception $e) {
-                Log::error('Mercado Pago Generic Error', [
-                    'order_number' => $order_number,
-                    'error' => $e->getMessage(),
-                    'class' => get_class($e),
-                ]);
-
-                return redirect()->route('checkout.failure', $order_number)
-                    ->with('error', 'Error al procesar el pago.');
-            }
-        }
+        $locals = Local::active()->get()->map(fn($l) => [
+            'id' => $l->id,
+            'title' => $l->title,
+            'address' => $l->address,
+            'short_description' => $l->short_description,
+            'label' => $l->label,
+        ]);
 
         return Inertia::render('Checkout/Payment', [
             'order' => $order->only([
                 'id',
                 'order_number',
-                'subtotal',
+                'guest_name',
+                'guest_last_name',
+                'guest_email',
+                'guest_phone',
+                'dni',
+                'delivery_method',
+                'delivery_district_id',
+                'shipping_address',
+                'delivery_reference',
                 'delivery_cost',
+                'pickup_local_id',
+                'pickup_local_name',
+                'pickup_local_address',
+                'document_type',
+                'billing_ruc',
+                'billing_business_name',
+                'billing_address',
+                'subtotal',
+                'discount_amount',
                 'final_total',
-                'status'
+                'coupon_code',
+                'coupon_name',
+                'discount_rule_name',
+                'discount_rule_percent',
+                'accepted_marketing',
+                'status',
             ]),
-            'order_number' => $order->order_number,
-            'preference' => ['id' => $preferenceId],
+            'items' => $order->items->map(fn($i) => [
+                'id' => $i->id,
+                'product_name' => $i->product_name,
+                'product_image' => $i->product_image,
+                'quantity' => $i->quantity,
+                'unit_price' => $i->unit_price,
+                'subtotal' => $i->subtotal,
+                'ml' => $i->ml,
+            ]),
+            'districts' => $districts,
+            'locals' => $locals,
+            'mpPublicKey' => config('services.mercadopago.public_key'),
         ]);
     }
     /**
@@ -304,6 +271,226 @@ class CheckoutController extends Controller
             'order' => $order->only(['final_total']),
             'message' => 'Tu pago está siendo procesado. Te enviaremos un correo cuando sea confirmado.'
         ]);
+    }
+
+    /**
+     * Aplica un cupón a la orden.
+     */
+    public function applyCoupon(Request $request, string $order_number)
+    {
+        $request->validate(['code' => 'required|string|max:50']);
+
+        $order = Order::where('order_number', $order_number)->firstOrFail();
+        $result = $this->orderService->applyCoupon($order, $request->input('code'));
+
+        return response()->json($result, $result['success'] ? 200 : 422);
+    }
+
+    /**
+     * Quita el cupón aplicado.
+     */
+    public function removeCoupon(string $order_number)
+    {
+        $order = Order::where('order_number', $order_number)->firstOrFail();
+        $result = $this->orderService->removeCoupon($order);
+
+        return response()->json($result);
+    }
+
+    /**
+     * Actualiza la información del cliente desde Payment.vue
+     * (delivery method, dirección, factura, etc.)
+     */
+    public function updateOrderInfo(Request $request, string $order_number)
+    {
+        $order = Order::where('order_number', $order_number)->firstOrFail();
+
+        $rules = [
+            'guest_name' => 'required|string|max:255',
+            'guest_last_name' => 'required|string|max:255',
+            'guest_email' => 'required|email|max:255',
+            'guest_phone' => 'required|string|max:20',
+            'dni' => 'required|string|max:20',
+            'delivery_method' => 'required|in:delivery,pickup',
+            'document_type' => 'required|in:boleta,factura',
+            'accepted_marketing' => 'sometimes|boolean',
+        ];
+
+        if ($request->input('delivery_method') === 'delivery') {
+            $rules['delivery_district_id'] = 'required|exists:districts,id';
+            $rules['shipping_address'] = 'required|string|max:500';
+            $rules['delivery_reference'] = 'nullable|string|max:255';
+        } else {
+            $rules['pickup_local_id'] = 'required|exists:locals,id';
+        }
+
+        if ($request->input('document_type') === 'factura') {
+            $rules['billing_ruc'] = 'required|string|size:11';
+            $rules['billing_business_name'] = 'required|string|max:255';
+            $rules['billing_address'] = 'required|string|max:500';
+        }
+
+        $validated = $request->validate($rules);
+
+        // Calcular delivery_cost
+        $deliveryCost = 0;
+        if ($validated['delivery_method'] === 'delivery') {
+            $district = District::find($validated['delivery_district_id']);
+            $deliveryCost = (float) ($district->delivery_cost ?? 0);
+        }
+
+        // Snapshot del local si pickup
+        $pickupName = null;
+        $pickupAddress = null;
+        if ($validated['delivery_method'] === 'pickup') {
+            $local = Local::find($validated['pickup_local_id']);
+            $pickupName = $local->title;
+            $pickupAddress = $local->address;
+        }
+
+        $order->update([
+            'guest_name' => $validated['guest_name'],
+            'guest_last_name' => $validated['guest_last_name'],
+            'guest_email' => $validated['guest_email'],
+            'guest_phone' => $validated['guest_phone'],
+            'dni' => $validated['dni'],
+            'delivery_method' => $validated['delivery_method'],
+            'delivery_full_name' => trim($validated['guest_name'] . ' ' . $validated['guest_last_name']),
+
+            // Delivery
+            'delivery_district_id' => $validated['delivery_method'] === 'delivery' ? $validated['delivery_district_id'] : null,
+            'shipping_address' => $validated['delivery_method'] === 'delivery' ? $validated['shipping_address'] : null,
+            'delivery_reference' => $validated['delivery_method'] === 'delivery' ? ($validated['delivery_reference'] ?? null) : null,
+            'delivery_cost' => $deliveryCost,
+
+            // Pickup
+            'pickup_local_id' => $validated['delivery_method'] === 'pickup' ? $validated['pickup_local_id'] : null,
+            'pickup_local_name' => $pickupName,
+            'pickup_local_address' => $pickupAddress,
+
+            // Documento
+            'document_type' => $validated['document_type'],
+            'billing_ruc' => $validated['document_type'] === 'factura' ? $validated['billing_ruc'] : null,
+            'billing_business_name' => $validated['document_type'] === 'factura' ? $validated['billing_business_name'] : null,
+            'billing_address' => $validated['document_type'] === 'factura' ? $validated['billing_address'] : null,
+
+            'accepted_marketing' => $request->boolean('accepted_marketing', $order->accepted_marketing),
+        ]);
+
+        // Recalcular totales (cambió delivery_cost)
+        $this->orderService->recalculateTotals($order->fresh());
+
+        return response()->json([
+            'success' => true,
+            'order' => $order->fresh(['items', 'district', 'pickupLocal']),
+        ]);
+    }
+
+    /**
+     * Crea la preferencia de Mercado Pago en el momento que el usuario
+     * confirma el pago. Se hace AQUÍ y no en payment() para que el monto
+     * refleje cualquier cupón/cambio de último momento.
+     */
+    public function createPreference(string $order_number)
+    {
+        $order = Order::with(['items', 'district', 'pickupLocal', 'latestPayment'])
+            ->where('order_number', $order_number)
+            ->firstOrFail();
+
+        if ($order->items->isEmpty()) {
+            return response()->json(['error' => 'Tu pedido no tiene productos.'], 422);
+        }
+
+        if ($order->latestPayment?->isApproved()) {
+            return response()->json(['error' => 'Esta orden ya fue pagada.'], 422);
+        }
+
+        // Validación mínima de info del cliente
+        if (empty($order->guest_email) || empty($order->guest_name)) {
+            return response()->json(['error' => 'Completa tu información antes de pagar.'], 422);
+        }
+
+        if ($order->isDelivery() && empty($order->shipping_address)) {
+            return response()->json(['error' => 'Completa la dirección de envío.'], 422);
+        }
+
+        if ($order->isPickup() && empty($order->pickup_local_id)) {
+            return response()->json(['error' => 'Selecciona una tienda para retiro.'], 422);
+        }
+
+        if ($order->isFactura() && empty($order->billing_ruc)) {
+            return response()->json(['error' => 'Completa los datos de facturación.'], 422);
+        }
+
+        MercadoPagoConfig::setAccessToken(config('services.mercadopago.access_token'));
+        $client = new PreferenceClient();
+
+        $preferenceData = [
+            'items' => $this->buildMpItemsFromOrder($order),
+            'payer' => array_filter([
+                'name' => $order->guest_name ?? '',
+                'surname' => $order->guest_last_name ?? '',
+                'email' => $order->guest_email ?? '',
+                'phone' => !empty($order->guest_phone) ? [
+                    'area_code' => '51',
+                    'number' => preg_replace('/\D/', '', $order->guest_phone),
+                ] : null,
+            ], fn($v) => !is_null($v) && $v !== ''),
+            'metadata' => [
+                'order_id' => $order->id,
+                'order_number' => $order->order_number,
+            ],
+            'statement_descriptor' => 'BRANA',
+            'external_reference' => $order->order_number,
+            'notification_url' => route('webhooks.mercadopago'),
+        ];
+
+        if (!app()->environment('local')) {
+            $preferenceData['back_urls'] = [
+                'success' => route('checkout.success', $order->order_number),
+                'failure' => route('checkout.failure', $order->order_number),
+                'pending' => route('checkout.pending', $order->order_number),
+            ];
+            $preferenceData['auto_return'] = 'approved';
+        }
+
+        try {
+            $preference = $client->create($preferenceData);
+
+            $order->update([
+                'payment_response' => array_merge(
+                    $order->payment_response ?? [],
+                    ['preference_id' => $preference->id]
+                ),
+            ]);
+
+            // ✅ Detecta si estamos usando credenciales de TEST y devuelve el init_point correcto
+            $isTest = str_starts_with(
+                config('services.mercadopago.access_token') ?? '',
+                'TEST-'
+            );
+
+            return response()->json([
+                'preference_id' => $preference->id,
+                'init_point' => $isTest
+                    ? $preference->sandbox_init_point
+                    : $preference->init_point,
+            ]);
+
+        } catch (\MercadoPago\Exceptions\MPApiException $e) {
+            Log::error('MP Preference Error', [
+                'order_number' => $order_number,
+                'message' => $e->getMessage(),
+                'mp_response' => $e->getApiResponse()?->getContent(),
+            ]);
+            return response()->json(['error' => 'No pudimos generar el enlace de pago.'], 500);
+        } catch (\Exception $e) {
+            Log::error('MP Generic Error', [
+                'order_number' => $order_number,
+                'error' => $e->getMessage(),
+            ]);
+            return response()->json(['error' => 'Error al procesar el pago.'], 500);
+        }
     }
 
 

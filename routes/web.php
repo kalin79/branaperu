@@ -57,13 +57,10 @@ Route::post('/cart/add', [CartController::class, 'add'])->name('cart.add');
 Route::get('/cart', [CartController::class, 'index'])->name('cart.index');
 Route::post('/cart/remove', [CartController::class, 'remove'])->name('cart.remove');
 Route::post('/cart/update', [CartController::class, 'update'])->name('cart.update');
-// routes/web.php
-Route::get('/checkout', [CheckoutController::class, 'index'])
-    ->name('checkout.index');
-// routes/web.php
 
 // ====================== E-coomerce ========================
-
+Route::get('/checkout', [CheckoutController::class, 'index'])
+    ->name('checkout.index');
 Route::post('/checkout/process', [CheckoutController::class, 'process'])
     ->name('checkout.process');
 Route::get('/checkout/payment/{order_number?}', [CheckoutController::class, 'payment'])
@@ -75,6 +72,19 @@ Route::get('/checkout/failure/{order_number}', [CheckoutController::class, 'fail
     ->name('checkout.failure');
 Route::get('/checkout/pending/{order_number}', [CheckoutController::class, 'pending'])
     ->name('checkout.pending');
+
+
+Route::post('/checkout/{order_number}/apply-coupon', [CheckoutController::class, 'applyCoupon'])
+    ->name('checkout.applyCoupon');
+
+Route::delete('/checkout/{order_number}/coupon', [CheckoutController::class, 'removeCoupon'])
+    ->name('checkout.removeCoupon');
+
+Route::post('/checkout/{order_number}/update-info', [CheckoutController::class, 'updateOrderInfo'])
+    ->name('checkout.updateOrderInfo');
+
+Route::post('/checkout/{order_number}/create-preference', [CheckoutController::class, 'createPreference'])
+    ->name('checkout.createPreference');
 
 // ====================== AUTENTICACIÓN ======================
 
