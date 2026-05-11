@@ -10,6 +10,23 @@ class ViewOrder extends ViewRecord
 {
     protected static string $resource = OrderResource::class;
 
+    /**
+     * Eager-load relaciones necesarias para evitar N+1 en la vista.
+     */
+    protected function resolveRecord(int|string $key): \Illuminate\Database\Eloquent\Model
+    {
+        return static::getResource()::getEloquentQuery()
+            ->with([
+                'user',
+                'items',
+                'payments',
+                'district',
+                'pickupLocal',
+                'coupon',
+            ])
+            ->findOrFail($key);
+    }
+
     protected function getHeaderActions(): array
     {
         return [

@@ -8,7 +8,7 @@ use App\Models\Payment;
 use Filament\Resources\Pages\ListRecords;
 use Filament\Tables;
 use Filament\Tables\Table;
-use Filament\Support\Icons\Heroicon;   // ← Necesario
+use Filament\Support\Icons\Heroicon;
 
 class AbandonedOrders extends ListRecords
 {
@@ -16,7 +16,7 @@ class AbandonedOrders extends ListRecords
 
     protected static ?string $title = '🛒 Carritos Abandonados';
 
-    protected static string|\BackedEnum|null $navigationIcon = Heroicon::Clock;   // ← Corregido
+    protected static string|\BackedEnum|null $navigationIcon = Heroicon::Clock;
 
     protected function getTableQuery(): \Illuminate\Database\Eloquent\Builder
     {
@@ -35,10 +35,40 @@ class AbandonedOrders extends ListRecords
                     ->sortable()
                     ->copyable(),
 
-                Tables\Columns\TextColumn::make('user.name')
+                // === TIPO DE CLIENTE ===
+                Tables\Columns\TextColumn::make('customer_type')
+                    ->label('Tipo')
+                    ->badge()
+                    ->state(fn(Order $record): string => $record->user_id ? 'cliente' : 'invitado')
+                    ->color(fn(string $state): string => match ($state) {
+                        'cliente' => 'info',
+                        'invitado' => 'gray',
+                    })
+                    ->icon(fn(string $state): string => match ($state) {
+                        'cliente' => 'heroicon-m-user',
+                        'invitado' => 'heroicon-m-user-circle',
+                    })
+                    ->formatStateUsing(fn(string $state): string => match ($state) {
+                        'cliente' => 'Cliente',
+                        'invitado' => 'Invitado',
+                    }),
+
+                // === CLIENTE (con accessor) ===
+                Tables\Columns\TextColumn::make('customer_name')
                     ->label('Cliente')
-                    ->searchable()
-                    ->sortable(),
+                    ->searchable(query: function ($query, string $search) {
+                        $query->where(function ($q) use ($search) {
+                            $q->whereHas('user', fn($u) => $u
+                                ->where('name', 'like', "%{$search}%")
+                                ->orWhere('email', 'like', "%{$search}%"))
+                                ->orWhere('guest_name', 'like', "%{$search}%")
+                                ->orWhere('guest_last_name', 'like', "%{$search}%")
+                                ->orWhere('guest_email', 'like', "%{$search}%")
+                                ->orWhere('delivery_full_name', 'like', "%{$search}%");
+                        });
+                    })
+                    ->description(fn(Order $record): ?string => $record->customer_email)
+                    ->wrap(),
 
                 Tables\Columns\TextColumn::make('final_total')
                     ->label('Total')

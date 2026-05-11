@@ -22,10 +22,43 @@ class OrdersTable
                     ->sortable()
                     ->copyable(),
 
-                Tables\Columns\TextColumn::make('user.name')
+                // === TIPO DE CLIENTE (Invitado / Cliente) ===
+                Tables\Columns\TextColumn::make('customer_type')
+                    ->label('Tipo')
+                    ->badge()
+                    ->state(fn(Order $record): string => $record->user_id ? 'cliente' : 'invitado')
+                    ->color(fn(string $state): string => match ($state) {
+                        'cliente' => 'info',
+                        'invitado' => 'gray',
+                    })
+                    ->icon(fn(string $state): string => match ($state) {
+                        'cliente' => 'heroicon-m-user',
+                        'invitado' => 'heroicon-m-user-circle',
+                    })
+                    ->formatStateUsing(fn(string $state): string => match ($state) {
+                        'cliente' => 'Cliente',
+                        'invitado' => 'Invitado',
+                    })
+                    ->sortable(query: function ($query, string $direction) {
+                        $query->orderByRaw('user_id IS NULL ' . $direction);
+                    }),
+
+                // === CLIENTE (usa el accessor customer_name del modelo) ===
+                Tables\Columns\TextColumn::make('customer_name')
                     ->label('Cliente')
-                    ->searchable()
-                    ->sortable(),
+                    ->searchable(query: function ($query, string $search) {
+                        $query->where(function ($q) use ($search) {
+                            $q->whereHas('user', fn($u) => $u
+                                ->where('name', 'like', "%{$search}%")
+                                ->orWhere('email', 'like', "%{$search}%"))
+                                ->orWhere('guest_name', 'like', "%{$search}%")
+                                ->orWhere('guest_last_name', 'like', "%{$search}%")
+                                ->orWhere('guest_email', 'like', "%{$search}%")
+                                ->orWhere('delivery_full_name', 'like', "%{$search}%");
+                        });
+                    })
+                    ->description(fn(Order $record): ?string => $record->customer_email)
+                    ->wrap(),
 
                 Tables\Columns\TextColumn::make('final_total')
                     ->label('Total')
@@ -70,11 +103,28 @@ class OrdersTable
                     ->sortable(),
             ])
             ->defaultSort('created_at', 'desc')
-            ->searchable(['order_number', 'user.name'])
             ->filters([
                 Tables\Filters\SelectFilter::make('status')
                     ->label('Estado Pedido')
                     ->options(Order::getStatusOptions()),
+
+                // === FILTRO POR TIPO DE CLIENTE ===
+                Tables\Filters\Filter::make('customer_type')
+                    ->label('Tipo de Cliente')
+                    ->form([
+                        \Filament\Forms\Components\Select::make('type')
+                            ->label('Tipo')
+                            ->options([
+                                'cliente' => 'Cliente registrado',
+                                'invitado' => 'Invitado (guest)',
+                            ])
+                            ->placeholder('Todos'),
+                    ])
+                    ->query(function ($query, array $data) {
+                        return $query
+                            ->when(($data['type'] ?? null) === 'cliente', fn($q) => $q->whereNotNull('user_id'))
+                            ->when(($data['type'] ?? null) === 'invitado', fn($q) => $q->whereNull('user_id'));
+                    }),
             ])
             ->actions([
                 ViewAction::make()->label('Ver detalle'),
