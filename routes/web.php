@@ -86,26 +86,6 @@ Route::post('/checkout/{order_number}/update-info', [CheckoutController::class, 
 Route::post('/checkout/{order_number}/create-preference', [CheckoutController::class, 'createPreference'])
     ->name('checkout.createPreference');
 
-// ====================== AUTENTICACIÓN ======================
-
-Route::middleware('guest')->group(function () {
-    Route::get('/login', function () {
-        return Inertia::render('Auth/Login');
-    })->name('login');
-
-    Route::get('/register', function () {
-        return Inertia::render('Auth/Register');
-    })->name('register');
-});
-
-Route::post('/login', [App\Http\Controllers\Auth\LoginController::class, 'login'])
-    ->name('login.post');
-
-Route::post('/register', [App\Http\Controllers\Auth\RegisterController::class, 'register'])
-    ->name('register.post');
-
-Route::post('/logout', [App\Http\Controllers\Auth\LoginController::class, 'logout'])
-    ->name('logout');
 
 // ====================== RUTAS PROTEGIDAS ======================
 
@@ -135,3 +115,12 @@ Route::get('/export-payments', [App\Http\Controllers\PaymentExportController::cl
 Route::fallback(function () {
     return Inertia::render('Errors/404');
 });
+
+// ================== ARMANADO DEL AUTH FRONTNEND ======================
+
+
+Route::get('/dashboard', function () {
+    return Inertia::render('Dashboard/Index');
+})->middleware('auth')->name('dashboard');
+
+require __DIR__ . '/auth.php';

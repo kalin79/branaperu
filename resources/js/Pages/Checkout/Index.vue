@@ -1,7 +1,12 @@
 <script setup>
 import AppLayout from "@/Layouts/AppLayout.vue";
-import { useForm as useInertiaForm, Link, router } from "@inertiajs/vue3";
-import { ref, computed, watch, watchEffect } from "vue";
+import {
+    useForm as useInertiaForm,
+    Link,
+    router,
+    usePage,
+} from "@inertiajs/vue3";
+import { ref, computed, watch, watchEffect, onMounted } from "vue";
 import { useForm as useVeeForm } from "vee-validate";
 import { toTypedSchema } from "@vee-validate/zod";
 import { z } from "zod";
@@ -90,6 +95,19 @@ const [guest_phone, guest_phoneAttrs] = defineField("guest_phone");
 const [accepted_terms, accepted_termsAttrs] = defineField("accepted_terms");
 const [accepted_privacy, accepted_privacyAttrs] =
     defineField("accepted_privacy");
+
+// ====================== USER LOGUEADO ======================
+const page = usePage();
+const user = computed(() => page.props.auth?.user || null);
+
+onMounted(() => {
+    if (user.value) {
+        guest_email.value = user.value.email || "";
+        guest_name.value = user.value.name || "";
+        guest_last_name.value = user.value.last_name || "";
+        guest_phone.value = user.value.phone || "";
+    }
+});
 
 // ====================== INERTIA FORM (solo para submit) ======================
 const inertiaForm = useInertiaForm({
@@ -331,8 +349,20 @@ const removeProduct = (productId) => {
                     <div class="myDataContainer">
                         <!-- === COLUMNA DERECHA: FORMULARIO === -->
                         <div class="headerData">
-                            <h2>Por favor, coloca tus datos...</h2>
-                            <Link href="/">Login</Link>
+                            <h2 v-if="!user">Por favor, coloca tus datos...</h2>
+                            <h2 v-else>
+                                Hola {{ user.name }}, confirma tus datos...
+                            </h2>
+
+                            <Link
+                                v-if="!user"
+                                :href="
+                                    route('login', { redirect: '/checkout' })
+                                "
+                                class="checkoutLoginLink"
+                            >
+                                Iniciar sesión
+                            </Link>
                         </div>
                         <div class="formContainer">
                             <form @submit="onSubmit">

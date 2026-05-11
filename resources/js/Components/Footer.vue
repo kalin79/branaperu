@@ -33,7 +33,7 @@
                         <Link href="/ventas-mayorista">Ventas Mayorista</Link>
                         <Link href="/blog">BLOG</Link>
                         <Link href="/contacto">Contáctenos</Link>
-                        <Link href="/auth/login">Login</Link>
+                        <Link href="/login">Login</Link>
                     </div>
                 </div>
                 <div class="columnaTres">

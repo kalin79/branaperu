@@ -31,7 +31,7 @@
                         <div class="barra"></div>
                     </div>
                     <div class="userContainer">
-                        <a href="/auth/login">
+                        <a href="/login">
                             <img :src="user" alt="login" />
                         </a>
                     </div>

@@ -10,6 +10,7 @@ gsap.registerPlugin(ScrollTrigger);
 
 // Ziggy
 import * as ZiggyModule from "./ziggy";
+import { route as ziggyRoute } from "ziggy-js";
 const Ziggy = ZiggyModule.Ziggy || {};
 
 import "../css/app.scss";
@@ -34,9 +35,7 @@ createInertiaApp({
             if (typeof name === "string" && name.startsWith("/")) return name;
 
             try {
-                if (Ziggy && Ziggy.route) {
-                    return Ziggy.route(name, params, absolute);
-                }
+                return ziggyRoute(name, params, absolute, Ziggy);
             } catch (e) {
                 console.warn(`[Ziggy] Ruta no encontrada: ${name}`);
             }

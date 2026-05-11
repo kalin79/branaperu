@@ -92,13 +92,15 @@ class CartController extends Controller
 
         $total = 0;
 
-        foreach ($cart as $item) {
-            $total += $item['price'] * $item['quantity'];
+        if (!empty($cart)) {
+            return redirect()->route('checkout.index');
         }
 
         return Inertia::render('Cart/Index', [
             'cart' => $cart,
             'total' => $total,
+            'title_meta' => 'Carrito vacio',
+            'description_meta' => 'No hay productos seleccionados...',
         ]);
     }
 }
