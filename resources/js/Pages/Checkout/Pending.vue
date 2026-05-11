@@ -11,35 +11,28 @@ defineProps({
 
 <template>
     <AppLayout title="Pago en Proceso">
-        <div class="min-h-screen bg-gray-50 py-12">
-            <div class="max-w-2xl mx-auto px-4">
-                <div class="bg-white rounded-3xl shadow-xl p-10 text-center">
-                    <div
-                        class="mx-auto w-20 h-20 bg-amber-100 rounded-full flex items-center justify-center mb-6"
-                    >
-                        <span class="text-5xl">⏳</span>
-                    </div>
-
-                    <h1 class="text-3xl font-bold text-gray-900 mb-3">
-                        Pago en proceso
-                    </h1>
+        <div class="cart-page">
+            <div class="container-fluid">
+                <div class="headerMainPago">
+                    <span class="text-5xl">⏳</span>
+                    <h1>Pago en <span>proceso</span></h1>
+                </div>
+                <div class="bodyMainPago">
                     <p class="text-gray-600 mb-8">{{ message }}</p>
 
-                    <div class="bg-gray-50 rounded-2xl p-6 mb-8">
-                        <p class="font-medium">Pedido #{{ order_number }}</p>
-                        <p class="text-xl font-semibold mt-2">
+                    <div class="dataPayBox">
+                        <h3 class="font-medium">Pedido #{{ order_number }}</h3>
+                        <h2 class="text-xl font-semibold mt-2">
                             S/ {{ Number(order.final_total).toFixed(2) }}
-                        </p>
+                        </h2>
+                    </div>
+                    <div class="btnContainer">
+                        <Link :href="route('home')" class="btn">
+                            Volver al inicio
+                        </Link>
                     </div>
 
-                    <Link
-                        :href="route('home')"
-                        class="block w-full bg-gray-800 hover:bg-gray-900 text-white font-medium py-4 rounded-2xl transition"
-                    >
-                        Volver al inicio
-                    </Link>
-
-                    <p class="text-xs text-gray-400 mt-8">
+                    <p>
                         Te notificaremos por correo cuando tu pago sea
                         confirmado.
                     </p>
@@ -48,3 +41,126 @@ defineProps({
         </div>
     </AppLayout>
 </template>
+<style lang="scss">
+.cart-page {
+    padding: 8rem 0 5rem;
+    .btnContainer {
+        margin-top: 1rem;
+        display: flex;
+        justify-content: flex-start;
+        align-items: center;
+        gap: 1rem;
+        a {
+            color: white;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1rem;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            white-space: nowrap;
+            border: 1px solid #0a5d31;
+            padding: 0.65rem 2.5rem;
+            background: #0a5d31;
+            border-radius: 30px;
+        }
+    }
+    .dataPayBox {
+        h2 {
+            font-family: Poppins, sans-serif;
+            font-size: 1rem;
+            line-height: 1.25em;
+            font-weight: 700;
+            color: #727272;
+            letter-spacing: -0.025em;
+            text-align: left;
+            @media screen and (min-width: 992px) {
+                font-size: 1.25rem;
+                line-height: 1.5em;
+            }
+            @media screen and (min-width: 1400px) {
+                font-size: 1.5rem;
+                line-height: 1.5em;
+            }
+        }
+
+        h3 {
+            font-family: Poppins, sans-serif;
+            font-size: 1rem;
+            line-height: 1.5em;
+            font-weight: 500;
+            color: #727272;
+            letter-spacing: -0.025em;
+            text-align: left;
+            @media screen and (min-width: 992px) {
+                font-size: 1.15rem;
+                line-height: 1.5em;
+            }
+            @media screen and (min-width: 1400px) {
+                font-size: 1.25rem;
+                line-height: 1.5em;
+            }
+        }
+    }
+    .headerMainPago {
+        display: flex;
+        justify-content: flex-start;
+        align-items: center;
+        gap: 1rem;
+    }
+    .btnVacio {
+        color: white;
+    }
+    p {
+        font-family: Poppins, sans-serif;
+        font-size: 0.865rem;
+        line-height: 1.5em;
+        font-weight: 600;
+        color: #727272;
+        letter-spacing: -0.025em;
+        text-align: left;
+        margin: 2rem 0;
+        @media screen and (min-width: 992px) {
+            font-size: 0.865rem;
+            line-height: 1.5em;
+        }
+        @media screen and (min-width: 1400px) {
+            font-size: 0.875rem;
+            line-height: 1.5em;
+        }
+        br {
+            display: none;
+            @media screen and (min-width: 992px) {
+                display: block;
+            }
+        }
+    }
+    h1 {
+        font-family: Poppins, sans-serif;
+        font-size: 2.5rem;
+        line-height: 0.75em;
+        font-weight: 400;
+        color: #5a4523;
+        letter-spacing: -0.025em;
+        text-align: left;
+        @media screen and (min-width: 992px) {
+            font-size: 3rem;
+            line-height: 0.75em;
+        }
+        @media screen and (min-width: 1400px) {
+            font-size: 3.375rem;
+            line-height: 0.75em;
+        }
+        span {
+            font-family: "PP Editorial New";
+            font-weight: normal;
+            color: #0a5d31;
+        }
+        br {
+            display: none;
+            @media screen and (min-width: 992px) {
+                display: block;
+            }
+        }
+    }
+}
+</style>

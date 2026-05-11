@@ -20,26 +20,40 @@ class MercadoPagoWebhookController extends Controller
 
     public function handle(Request $request)
     {
-        $data = $request->all();
+        // Combinamos body + query string, ya que MP usa ambos
+        $payload = array_merge($request->query(), $request->all());
+
+        // MP usa "type" en webhooks nuevos y "topic" en IPN viejos
+        $type = $payload['type'] ?? $payload['topic'] ?? 'unknown';
+        $action = $payload['action'] ?? null;
+
+        // El ID puede venir como data.id (webhook), data[id], o id (IPN viejo)
+        $paymentId = $payload['data']['id']
+            ?? $payload['data.id']
+            ?? $request->query('data.id')
+            ?? $payload['id']
+            ?? null;
 
         Log::info('🌐 Mercado Pago Webhook Recibido', [
-            'type' => $data['type'] ?? 'unknown',
-            'action' => $data['action'] ?? null,
+            'type' => $type,
+            'action' => $action,
+            'payment_id' => $paymentId,
             'ip' => $request->ip(),
+            'query' => $request->query(),
+            'body' => $request->all(),
         ]);
 
-        // 1. Validar firma del webhook (seguridad)
+        // 1. Validar firma
         if (!$this->isValidSignature($request)) {
             Log::warning('⚠️ Webhook con firma inválida', ['ip' => $request->ip()]);
             return response()->json(['status' => 'invalid signature'], 401);
         }
 
-        // 2. Solo procesamos notificaciones de tipo "payment"
-        if (($data['type'] ?? '') !== 'payment') {
+        // 2. Solo procesamos pagos. MP también manda merchant_order, plan, etc.
+        if (!in_array($type, ['payment'], true)) {
+            Log::info('Webhook ignorado (no es de tipo payment)', ['type' => $type]);
             return response()->json(['status' => 'ignored'], 200);
         }
-
-        $paymentId = $data['data']['id'] ?? null;
 
         if (!$paymentId) {
             Log::warning('Webhook sin payment ID');
@@ -91,7 +105,6 @@ class MercadoPagoWebhookController extends Controller
                 'trace' => $e->getTraceAsString(),
             ]);
 
-            // 500 → MP reintentará. 200 → MP no reintenta.
             return response()->json(['status' => 'error'], 500);
         }
     }

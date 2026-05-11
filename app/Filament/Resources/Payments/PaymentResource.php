@@ -2,19 +2,22 @@
 
 namespace App\Filament\Resources\Payments;
 
+use App\Exports\PaymentsExport;
+use App\Models\Order;
 use App\Models\Payment;
-use Filament\Schemas\Components\Section;
-use Filament\Forms\Components\Select;
-use Filament\Forms\Components\Placeholder;
-use Filament\Resources\Resource;
-use Filament\Schemas\Schema;
-use Filament\Tables;
+use Filament\Actions\Action;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Actions\ViewAction;
+use Filament\Forms\Components\Placeholder;
+use Filament\Forms\Components\Select;
+use Filament\Resources\Resource;
+use Filament\Schemas\Components\Section;
+use Filament\Schemas\Schema;
+use Filament\Tables;
 use Filament\Tables\Table;
-use Filament\Actions\Action;
+use Maatwebsite\Excel\Facades\Excel;
 use UnitEnum;
 
 class PaymentResource extends Resource
@@ -30,47 +33,52 @@ class PaymentResource extends Resource
 
     protected static ?string $recordTitleAttribute = 'external_id';
 
+    /**
+     * Form de edición: SOLO se puede modificar el estado del pago.
+     * El resto se muestra como información de solo lectura.
+     */
     public static function form(Schema $form): Schema
     {
         return $form
             ->schema([
                 Section::make('Información del Pago')
-                    ->description('Esta información no se puede modificar')
+                    ->description('Datos no editables (sincronizados con la pasarela)')
                     ->schema([
                         Placeholder::make('order_number')
                             ->label('N° Orden')
-                            ->content(fn($record) => $record->order?->order_number ?? '—'),
+                            ->content(fn($record) => $record?->order?->order_number ?? '—'),
+
+                        Placeholder::make('customer_name')
+                            ->label('Cliente')
+                            ->content(fn($record) => $record?->order?->customer_name ?? '—'),
 
                         Placeholder::make('external_id')
                             ->label('ID MercadoPago')
-                            ->content(fn($record) => $record->external_id),
+                            ->content(fn($record) => $record?->external_id ?? '—'),
 
                         Placeholder::make('amount')
-                            ->label('Monto Pagado')
-                            ->content(fn($record) => 'S/ ' . number_format($record->amount ?? 0, 2)),
+                            ->label('Monto')
+                            ->content(fn($record) => 'S/ ' . number_format($record?->amount ?? 0, 2)),
 
                         Placeholder::make('payment_method')
                             ->label('Método')
-                            ->content(fn($record) => ucfirst($record->payment_method ?? '—')),
+                            ->content(fn($record) => ucfirst($record?->payment_method ?? '—')),
 
-                        Placeholder::make('payment_status')
-                            ->label('Estado del Pago')
-                            ->content('Aprobado'),
+                        Placeholder::make('attempts')
+                            ->label('Intentos totales para esta orden')
+                            ->content(fn($record) => $record?->order?->payments()->count() ?? 0),
                     ])
                     ->columns(2),
 
-                Section::make('Estado del Pedido')
-                    ->description('Cambia el estado logístico de esta orden')
+                Section::make('Estado del Pago')
+                    ->description('Lo único editable. Útil para reflejar reembolsos, chargebacks o correcciones manuales.')
                     ->schema([
-                        Select::make('order_status')
-                            ->label('Estado del Pedido')
-                            ->options(\App\Models\Order::getStatusOptions())
-                            ->default(fn($record) => $record->order?->status)
+                        Select::make('status')
+                            ->label('Estado del Pago')
+                            ->options(Payment::getStatusOptions())
                             ->required()
-                            ->columnSpanFull()
-                            ->afterStateHydrated(function ($component, $record) {
-                                $component->state($record->order?->status);
-                            }),
+                            ->native(false)
+                            ->columnSpanFull(),
                     ]),
             ]);
     }
@@ -79,48 +87,146 @@ class PaymentResource extends Resource
     {
         return $table
             ->query(
-                Payment::where('status', Payment::STATUS_APPROVED)
-                    ->with('order')
+                // 👉 Solo pagos APROBADOS — una fila por orden.
+                //    Si hubiera más de un approved por orden (raro), tomamos el más reciente.
+                //    El conteo de "Intentos" sigue mostrando TODOS los intentos de esa orden
+                //    (aprobados + rechazados + en proceso), porque el withCount es sobre la
+                //    relación payments completa.
+                Payment::query()
+                    ->where('status', Payment::STATUS_APPROVED)
+                    ->whereIn('id', function ($q) {
+                        $q->selectRaw('MAX(id)')
+                            ->from('payments')
+                            ->where('status', Payment::STATUS_APPROVED)
+                            ->whereNull('deleted_at')
+                            ->groupBy('order_id');
+                    })
+                    ->with([
+                        'order' => fn($q) => $q
+                            ->withCount('payments')
+                            ->with('user'),
+                    ])
                     ->latest()
             )
             ->columns([
                 Tables\Columns\TextColumn::make('order.order_number')
                     ->label('N° Orden')
                     ->searchable()
-                    ->sortable(),
-                Tables\Columns\TextColumn::make('external_id')
-                    ->label('ID MercadoPago')
-                    ->searchable()
+                    ->sortable()
                     ->copyable(),
+
+                // === TIPO DE CLIENTE ===
+                Tables\Columns\TextColumn::make('customer_type')
+                    ->label('Tipo')
+                    ->badge()
+                    ->state(fn($record) => $record->order?->user_id ? 'cliente' : 'invitado')
+                    ->color(fn(string $state): string => match ($state) {
+                        'cliente' => 'info',
+                        'invitado' => 'gray',
+                    })
+                    ->icon(fn(string $state): string => match ($state) {
+                        'cliente' => 'heroicon-m-user',
+                        'invitado' => 'heroicon-m-user-circle',
+                    })
+                    ->formatStateUsing(fn(string $state): string => match ($state) {
+                        'cliente' => 'Cliente',
+                        'invitado' => 'Invitado',
+                    }),
+
+                // === CLIENTE (usa el accessor del modelo Order) ===
+                Tables\Columns\TextColumn::make('order.customer_name')
+                    ->label('Cliente')
+                    ->description(fn($record) => $record->order?->customer_email)
+                    ->searchable(query: function ($query, string $search) {
+                        $query->whereHas('order', function ($q) use ($search) {
+                            $q->where('guest_name', 'like', "%{$search}%")
+                                ->orWhere('guest_last_name', 'like', "%{$search}%")
+                                ->orWhere('guest_email', 'like', "%{$search}%")
+                                ->orWhereHas('user', fn($u) => $u
+                                    ->where('name', 'like', "%{$search}%")
+                                    ->orWhere('email', 'like', "%{$search}%"));
+                        });
+                    })
+                    ->wrap(),
+
+                // === INTENTOS DE PAGO ===
+                Tables\Columns\TextColumn::make('order.payments_count')
+                    ->label('Intentos')
+                    ->badge()
+                    ->color(fn(?int $state): string => match (true) {
+                        $state === null => 'gray',
+                        $state === 1 => 'success',
+                        $state <= 3 => 'warning',
+                        default => 'danger',
+                    })
+                    ->formatStateUsing(fn(?int $state) => $state === 1 ? '1 intento' : "{$state} intentos")
+                    ->alignCenter(),
 
                 Tables\Columns\TextColumn::make('amount')
                     ->label('Monto')
                     ->money('PEN')
                     ->sortable()
                     ->alignEnd(),
+
                 Tables\Columns\TextColumn::make('order.status_label')
-                    ->label('Estado del Pedido')
+                    ->label('Estado Pedido')
                     ->badge()
                     ->color(fn($record) => $record->order?->status_color ?? 'gray'),
 
                 Tables\Columns\TextColumn::make('status')
                     ->label('Estado Pago')
                     ->badge()
-                    ->color('success')
-                    ->formatStateUsing(fn() => 'Aprobado'),
+                    ->color(fn(?string $state): string => match ($state) {
+                        Payment::STATUS_APPROVED => 'success',
+                        Payment::STATUS_REJECTED => 'danger',
+                        Payment::STATUS_CHARGEBACK => 'danger',
+                        Payment::STATUS_REFUNDED => 'warning',
+                        Payment::STATUS_IN_PROCESS,
+                        Payment::STATUS_PENDING => 'warning',
+                        default => 'gray',
+                    })
+                    ->formatStateUsing(
+                        fn(?string $state) =>
+                        $state ? (Payment::getStatusOptions()[$state] ?? $state) : '—'
+                    ),
 
                 Tables\Columns\TextColumn::make('payment_method')
                     ->label('Método')
-                    ->default('—'),
+                    ->default('—')
+                    ->toggleable(),
 
                 Tables\Columns\TextColumn::make('created_at')
-                    ->label('Fecha')
+                    ->label('Último intento')
                     ->dateTime('d/m/Y H:i')
                     ->sortable(),
             ])
             ->defaultSort('created_at', 'desc')
+            ->filters([
+                Tables\Filters\Filter::make('customer_type')
+                    ->label('Tipo de Cliente')
+                    ->form([
+                        Select::make('type')
+                            ->label('Tipo')
+                            ->options([
+                                'cliente' => 'Cliente registrado',
+                                'invitado' => 'Invitado',
+                            ])
+                            ->placeholder('Todos'),
+                    ])
+                    ->query(function ($query, array $data) {
+                        return $query
+                            ->when(
+                                ($data['type'] ?? null) === 'cliente',
+                                fn($q) => $q->whereHas('order', fn($o) => $o->whereNotNull('user_id'))
+                            )
+                            ->when(
+                                ($data['type'] ?? null) === 'invitado',
+                                fn($q) => $q->whereHas('order', fn($o) => $o->whereNull('user_id'))
+                            );
+                    }),
+            ])
             ->actions([
-                ViewAction::make(),
+                ViewAction::make()->label('Ver'),
                 EditAction::make()->label('Editar Estado'),
             ])
             ->bulkActions([
@@ -130,10 +236,17 @@ class PaymentResource extends Resource
             ])
             ->headerActions([
                 Action::make('export')
-                    ->label('Descargar Excel')
+                    ->label('Exportar a Excel')
                     ->icon('heroicon-o-arrow-down-tray')
-                    ->url(route('export.payments'))   // ← Cambiado a la ruta simple
-                    ->color('success'),
+                    ->color('success')
+                    ->action(function ($livewire) {
+                        $query = $livewire->getFilteredTableQuery();
+
+                        return Excel::download(
+                            new PaymentsExport($query),
+                            'pagos_' . now()->format('Y-m-d_His') . '.xlsx'
+                        );
+                    }),
             ]);
     }
 

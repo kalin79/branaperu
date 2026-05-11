@@ -3,8 +3,8 @@
 namespace App\Filament\Resources\Payments\Pages;
 
 use App\Filament\Resources\Payments\PaymentResource;
-use Filament\Resources\Pages\EditRecord;
 use Filament\Actions\Action;
+use Filament\Resources\Pages\EditRecord;
 
 class EditPayment extends EditRecord
 {
@@ -20,16 +20,16 @@ class EditPayment extends EditRecord
         ];
     }
 
-    protected function afterSave(): void
+    /**
+     * Permitimos editar solo el campo `status` del pago.
+     * El formulario lo enmascara: el resto son Placeholders no editables.
+     */
+    protected function mutateFormDataBeforeSave(array $data): array
     {
-        $newStatus = $this->data['order_status'] ?? null;
-
-        if ($newStatus && $this->record->order) {
-            $this->record->order->update([
-                'status' => $newStatus,
-                'updated_at' => now(),
-            ]);
-        }
+        // Defensivo: aseguramos que ningún otro campo se filtre por el form
+        return [
+            'status' => $data['status'] ?? $this->record->status,
+        ];
     }
 
     protected function getRedirectUrl(): string
@@ -39,6 +39,6 @@ class EditPayment extends EditRecord
 
     protected function getSavedNotificationTitle(): ?string
     {
-        return '✅ Estado del Pedido actualizado correctamente';
+        return '✅ Estado del pago actualizado correctamente';
     }
 }

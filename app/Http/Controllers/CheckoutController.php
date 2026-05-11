@@ -29,7 +29,6 @@ class CheckoutController extends Controller
             return redirect()->route('cart.index');
         }
 
-        // ✅ SOLUCIÓN:
         $districts = District::active()
             ->select([
                 'id',
@@ -69,7 +68,6 @@ class CheckoutController extends Controller
             'accepted_terms' => 'required|accepted',
             'accepted_privacy' => 'required|accepted',
 
-            // Estos campos son obligatorios ahora
             'subtotal' => 'required|numeric|min:0',
             'final_total' => 'required|numeric|min:0',
             'items' => 'required|array',
@@ -90,7 +88,7 @@ class CheckoutController extends Controller
             'delivery_district_id' => $validated['delivery_district_id'],
             'shipping_address' => $validated['shipping_address'],
             'delivery_reference' => $validated['delivery_reference'] ?? null,
-            'delivery_cost' => $request->input('delivery_cost', 0), // ← agregar
+            'delivery_cost' => $request->input('delivery_cost', 0),
             'dni' => $validated['dni'],
 
             'accepted_terms' => $validated['accepted_terms'],
@@ -98,17 +96,13 @@ class CheckoutController extends Controller
             'accepted_marketing' => $request->boolean('accepted_marketing', false),
 
             'notes' => $request->input('notes'),
-            // ✅ ESTA LÍNEA es la que falta
             'items' => $validated['items'],
         ];
 
-        // Crear la Orden (sin pago todavía)
         $order = $this->orderService->createOrderWithPayment($orderData, [
-            'provider' => 'mercadopago',   // solo como referencia
+            'provider' => 'mercadopago',
         ]);
-        // Limpiar el carrito de la sesión
         session()->forget('cart');
-        // ✅ BIEN - redirect a una URL real
         return redirect()->route('checkout.payment', $order->order_number);
     }
 
@@ -130,11 +124,9 @@ class CheckoutController extends Controller
             return redirect()->route('checkout.success', $order->order_number);
         }
 
-        // Aplica descuento automático al cargar (si corresponde y no hay cupón)
         $this->orderService->applyAutoDiscountIfEligible($order);
         $order->refresh();
 
-        // Cargar datos para los selectores
         $districts = District::active()
             ->select(['id', 'department', 'province', 'district', 'delivery_cost', 'ubigeo'])
             ->get()
@@ -192,9 +184,10 @@ class CheckoutController extends Controller
             'districts' => $districts,
             'locals' => $locals,
             'mpPublicKey' => config('services.mercadopago.public_key'),
-            'defaultDeliveryCost' => DeliveryConfiguration::defaultDeliveryCost(), // ← NUEVO
+            'defaultDeliveryCost' => DeliveryConfiguration::defaultDeliveryCost(),
         ]);
     }
+
     /**
      * Construye los items para Mercado Pago desde la Orden
      */
@@ -211,26 +204,78 @@ class CheckoutController extends Controller
     }
 
     /**
+     * ✅ NUEVO: determina si una URL es "pública" (HTTPS y no localhost).
+     * MercadoPago rechaza back_urls/notification_url que apunten a localhost
+     * o que no sean HTTPS, especialmente cuando se usa auto_return.
+     */
+    private function isPublicUrl(string $url): bool
+    {
+        $parts = parse_url($url);
+
+        if (!$parts || empty($parts['host']) || empty($parts['scheme'])) {
+            return false;
+        }
+
+        if ($parts['scheme'] !== 'https') {
+            return false;
+        }
+
+        $host = strtolower($parts['host']);
+        $blockedHosts = ['localhost', '127.0.0.1', '0.0.0.0', '::1'];
+
+        if (in_array($host, $blockedHosts, true)) {
+            return false;
+        }
+
+        // Bloquea también rangos privados típicos (192.168.x.x, 10.x.x.x, etc.)
+        if (
+            filter_var($host, FILTER_VALIDATE_IP) && !filter_var(
+                $host,
+                FILTER_VALIDATE_IP,
+                FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE
+            )
+        ) {
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
      * Pago aprobado exitosamente
      */
-    public function success(string $order_number)
+    public function success(Request $request, string $order_number)
     {
         $order = Order::with(['items', 'district', 'latestPayment'])
             ->where('order_number', $order_number)
             ->firstOrFail();
 
-        // Si el pago ya fue aprobado (vía webhook o manual)
+        // Si MP nos mandó un collection_id (payment_id), lo consultamos como fallback
+        $collectionId = $request->query('collection_id') ?? $request->query('payment_id');
+
+        if ($collectionId && !$order->latestPayment?->isApproved()) {
+            try {
+                MercadoPagoConfig::setAccessToken(config('services.mercadopago.access_token'));
+                $client = new \MercadoPago\Client\Payment\PaymentClient();
+                $payment = $client->get($collectionId);
+                $paymentInfo = json_decode(json_encode($payment), true);
+
+                $this->orderService->updatePaymentStatus($order->order_number, $paymentInfo);
+                $order->refresh();
+            } catch (\Exception $e) {
+                Log::warning('No se pudo verificar pago desde success', [
+                    'order' => $order_number,
+                    'error' => $e->getMessage(),
+                ]);
+            }
+        }
+
         if ($order->latestPayment?->isApproved()) {
             $order->update(['status' => Order::STATUS_PREPARING]);
         }
 
         return Inertia::render('Checkout/Success', [
-            'order' => $order->only([
-                'order_number',
-                'final_total',
-                'guest_name',
-                'guest_email'
-            ]),
+            'order' => $order->only(['order_number', 'final_total', 'guest_name', 'guest_email']),
             'items' => $order->items->map(fn($item) => [
                 'name' => $item->product_name,
                 'quantity' => $item->quantity,
@@ -248,7 +293,6 @@ class CheckoutController extends Controller
             ->where('order_number', $order_number)
             ->firstOrFail();
 
-        // Opcional: marcar como abandonado o mantener en pending
         if (!$order->latestPayment?->isApproved()) {
             $order->update(['status' => Order::STATUS_PENDING]);
         }
@@ -300,7 +344,6 @@ class CheckoutController extends Controller
 
     /**
      * Actualiza la información del cliente desde Payment.vue
-     * (delivery method, dirección, factura, etc.)
      */
     public function updateOrderInfo(Request $request, string $order_number)
     {
@@ -333,14 +376,12 @@ class CheckoutController extends Controller
 
         $validated = $request->validate($rules);
 
-        // Calcular delivery_cost
         $deliveryCost = 0;
         if ($validated['delivery_method'] === 'delivery') {
             $district = District::find($validated['delivery_district_id']);
             $deliveryCost = $district->effective_delivery_cost;
         }
 
-        // Snapshot del local si pickup
         $pickupName = null;
         $pickupAddress = null;
         if ($validated['delivery_method'] === 'pickup') {
@@ -358,18 +399,15 @@ class CheckoutController extends Controller
             'delivery_method' => $validated['delivery_method'],
             'delivery_full_name' => trim($validated['guest_name'] . ' ' . $validated['guest_last_name']),
 
-            // Delivery
             'delivery_district_id' => $validated['delivery_method'] === 'delivery' ? $validated['delivery_district_id'] : null,
             'shipping_address' => $validated['delivery_method'] === 'delivery' ? $validated['shipping_address'] : null,
             'delivery_reference' => $validated['delivery_method'] === 'delivery' ? ($validated['delivery_reference'] ?? null) : null,
             'delivery_cost' => $deliveryCost,
 
-            // Pickup
             'pickup_local_id' => $validated['delivery_method'] === 'pickup' ? $validated['pickup_local_id'] : null,
             'pickup_local_name' => $pickupName,
             'pickup_local_address' => $pickupAddress,
 
-            // Documento
             'document_type' => $validated['document_type'],
             'billing_ruc' => $validated['document_type'] === 'factura' ? $validated['billing_ruc'] : null,
             'billing_business_name' => $validated['document_type'] === 'factura' ? $validated['billing_business_name'] : null,
@@ -378,7 +416,6 @@ class CheckoutController extends Controller
             'accepted_marketing' => $request->boolean('accepted_marketing', $order->accepted_marketing),
         ]);
 
-        // Recalcular totales (cambió delivery_cost)
         $this->orderService->recalculateTotals($order->fresh());
 
         return response()->json([
@@ -389,8 +426,7 @@ class CheckoutController extends Controller
 
     /**
      * Crea la preferencia de Mercado Pago en el momento que el usuario
-     * confirma el pago. Se hace AQUÍ y no en payment() para que el monto
-     * refleje cualquier cupón/cambio de último momento.
+     * confirma el pago.
      */
     public function createPreference(string $order_number)
     {
@@ -406,7 +442,6 @@ class CheckoutController extends Controller
             return response()->json(['error' => 'Esta orden ya fue pagada.'], 422);
         }
 
-        // Validación mínima de info del cliente
         if (empty($order->guest_email) || empty($order->guest_name)) {
             return response()->json(['error' => 'Completa tu información antes de pagar.'], 422);
         }
@@ -426,6 +461,16 @@ class CheckoutController extends Controller
         MercadoPagoConfig::setAccessToken(config('services.mercadopago.access_token'));
         $client = new PreferenceClient();
 
+        // ✅ Construimos las URLs y verificamos si son públicas (HTTPS y no localhost)
+        $successUrl = route('checkout.success', $order->order_number);
+        $failureUrl = route('checkout.failure', $order->order_number);
+        $pendingUrl = route('checkout.pending', $order->order_number);
+        $notificationUrl = route('webhooks.mercadopago');
+
+        $backUrlsArePublic = $this->isPublicUrl($successUrl)
+            && $this->isPublicUrl($failureUrl)
+            && $this->isPublicUrl($pendingUrl);
+
         $preferenceData = [
             'items' => $this->buildMpItemsFromOrder($order),
             'payer' => array_filter([
@@ -443,14 +488,32 @@ class CheckoutController extends Controller
             ],
             'statement_descriptor' => 'BRANA',
             'external_reference' => $order->order_number,
-            'notification_url' => route('webhooks.mercadopago'),
-            'back_urls' => [
-                'success' => route('checkout.success', $order->order_number),
-                'failure' => route('checkout.failure', $order->order_number),
-                'pending' => route('checkout.pending', $order->order_number),
-            ],
-            'auto_return' => 'approved',
         ];
+
+        // ✅ back_urls SIEMPRE las enviamos (MP las acepta aunque sean http en algunos casos),
+        // pero auto_return SOLO si son URLs públicas válidas.
+        $preferenceData['back_urls'] = [
+            'success' => $successUrl,
+            'failure' => $failureUrl,
+            'pending' => $pendingUrl,
+        ];
+
+        if ($backUrlsArePublic) {
+            $preferenceData['auto_return'] = 'approved';
+        } else {
+            Log::info('🧪 MP: auto_return omitido (back_urls no son públicas/HTTPS)', [
+                'success' => $successUrl,
+            ]);
+        }
+
+        // ✅ notification_url solo si es pública (MP no puede llamar a localhost)
+        if ($this->isPublicUrl($notificationUrl)) {
+            $preferenceData['notification_url'] = $notificationUrl;
+        } else {
+            Log::info('🧪 MP: notification_url omitido (no es pública)', [
+                'url' => $notificationUrl,
+            ]);
+        }
 
         try {
             $preference = $client->create($preferenceData);
@@ -462,7 +525,6 @@ class CheckoutController extends Controller
                 ),
             ]);
 
-            // ✅ Detecta si estamos usando credenciales de TEST y devuelve el init_point correcto
             $isTest = str_starts_with(
                 config('services.mercadopago.access_token') ?? '',
                 'TEST-'
@@ -490,6 +552,4 @@ class CheckoutController extends Controller
             return response()->json(['error' => 'Error al procesar el pago.'], 500);
         }
     }
-
-
 }
