@@ -233,12 +233,22 @@ const handlePayClick = async () => {
     globalError.value = null;
 
     try {
-        // 1. Guardar info del cliente
+        // 1. Guardar info del cliente (con revalidación de cupón en el backend)
         const updateRes = await axios.post(
             `/checkout/${props.order.order_number}/update-info`,
             form.value,
         );
         if (updateRes.data.order) updateTotals(updateRes.data.order);
+
+        // ✅ NUEVO: si el cupón se quitó automáticamente, avisar y abortar
+        if (updateRes.data.coupon_removed) {
+            couponError.value =
+                updateRes.data.coupon_message ||
+                "El cupón fue removido porque ya no aplica con los nuevos datos.";
+            couponInput.value = "";
+            loading.value = false;
+            return; // no avanzamos a crear la preferencia
+        }
 
         // 2. Crear preferencia en MP
         const prefRes = await axios.post(
@@ -248,11 +258,17 @@ const handlePayClick = async () => {
         // 3. Redirigir a MP
         if (prefRes.data.init_point) {
             window.location.href = prefRes.data.init_point;
-        } else {
-            globalError.value = "No se pudo iniciar el pago.";
-            submitting.value = false;
         }
     } catch (e) {
+        // ✅ NUEVO: si createPreference detecta cupón inválido, también mostrar aviso
+        if (err.response?.status === 422 && err.response.data?.coupon_removed) {
+            couponError.value =
+                err.response.data.error || "El cupón aplicado ya no es válido.";
+            if (err.response.data.order) updateTotals(err.response.data.order);
+            couponInput.value = "";
+            loading.value = false;
+            return;
+        }
         if (e.response?.status === 422) {
             errors.value = e.response.data.errors || {};
             globalError.value =

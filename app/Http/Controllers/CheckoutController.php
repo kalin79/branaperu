@@ -1,7 +1,8 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Frontend;
 
+use App\Http\Controllers\Controller;
 use App\Services\OrderPaymentService;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -418,10 +419,23 @@ class CheckoutController extends Controller
 
         $this->orderService->recalculateTotals($order->fresh());
 
-        return response()->json([
+        // ✅ Revalida el cupón con los nuevos datos del cliente
+        // (si cambió el email/DNI, podría haber alcanzado el límite por usuario)
+        $revalidation = $this->orderService->revalidateCoupon($order->fresh());
+
+        $response = [
             'success' => true,
             'order' => $order->fresh(['items', 'district', 'pickupLocal']),
-        ]);
+        ];
+
+        // Si el cupón se quitó automáticamente, avisamos al frontend
+        if (!$revalidation['valid']) {
+            $response['coupon_removed'] = true;
+            $response['coupon_message'] = $revalidation['reason']
+                ?? 'El cupón ya no aplica con los nuevos datos. Fue removido.';
+        }
+
+        return response()->json($response);
     }
 
     /**
@@ -457,6 +471,17 @@ class CheckoutController extends Controller
         if ($order->isFactura() && empty($order->billing_ruc)) {
             return response()->json(['error' => 'Completa los datos de facturación.'], 422);
         }
+
+        // ✅ Última red de seguridad: revalidar cupón antes de generar el pago
+        $revalidation = $this->orderService->revalidateCoupon($order);
+        if (!$revalidation['valid']) {
+            return response()->json([
+                'error' => $revalidation['reason'] ?? 'El cupón aplicado ya no es válido.',
+                'coupon_removed' => true,
+                'order' => $revalidation['order'] ?? $order->fresh(),
+            ], 422);
+        }
+        $order = $order->fresh(['items', 'district', 'pickupLocal', 'latestPayment']);
 
         MercadoPagoConfig::setAccessToken(config('services.mercadopago.access_token'));
         $client = new PreferenceClient();

@@ -202,24 +202,20 @@ class OrderPaymentService
      */
     public function applyCoupon(Order $order, string $couponCode): array
     {
-        $coupon = Coupon::valid()->whereRaw('UPPER(code) = ?', [strtoupper(trim($couponCode))])->first();
+        $coupon = Coupon::valid()
+            ->whereRaw('UPPER(code) = ?', [strtoupper(trim($couponCode))])
+            ->first();
 
         if (!$coupon) {
             return ['success' => false, 'message' => 'Cupón no válido o expirado.'];
         }
 
-        if ($order->subtotal < $coupon->min_purchase_amount) {
-            return [
-                'success' => false,
-                'message' => 'Tu pedido debe ser mínimo S/ ' . number_format($coupon->min_purchase_amount, 2) . ' para usar este cupón.',
-            ];
+        // ✅ Todas las validaciones (mínimo, max_uses, max_uses_per_user, etc.)
+        if ($error = $this->validateCouponForOrder($coupon, $order)) {
+            return ['success' => false, 'message' => $error];
         }
 
         $discount = $coupon->calculateDiscount((float) $order->subtotal);
-
-        if ($discount <= 0) {
-            return ['success' => false, 'message' => 'Este cupón no aplica a tu pedido.'];
-        }
 
         // Aplicar cupón → REEMPLAZA descuento automático
         $order->update([
@@ -239,6 +235,162 @@ class OrderPaymentService
 
         return ['success' => true, 'order' => $order->fresh(['items', 'district', 'pickupLocal'])];
     }
+
+    /**
+     * Revalida el cupón aplicado contra el estado actual de la orden.
+     * Útil cuando cambian datos del cliente (email/DNI) o el subtotal.
+     *
+     * - Si la orden no tiene cupón → no hace nada.
+     * - Si el cupón sigue siendo válido → recalcula el descuento por si el subtotal cambió.
+     * - Si ya no aplica → lo quita y reaplica descuento automático si corresponde.
+     *
+     * @return array{valid: bool, reason?: string, order: Order}
+     */
+    public function revalidateCoupon(Order $order): array
+    {
+        if (!$order->hasCouponApplied()) {
+            return ['valid' => true, 'order' => $order];
+        }
+
+        $coupon = Coupon::find($order->coupon_id);
+
+        // El cupón fue eliminado de la BD
+        if (!$coupon) {
+            $this->removeCoupon($order);
+            return [
+                'valid' => false,
+                'reason' => 'El cupón aplicado ya no está disponible.',
+                'order' => $order->fresh(['items', 'district', 'pickupLocal']),
+            ];
+        }
+
+        // Revisa: vigencia, mínimo de compra, max_uses, max_uses_per_user
+        $error = $this->validateCouponForOrder($coupon, $order);
+
+        if ($error) {
+            $this->removeCoupon($order);
+            return [
+                'valid' => false,
+                'reason' => $error,
+                'order' => $order->fresh(['items', 'district', 'pickupLocal']),
+            ];
+        }
+
+        // Sigue siendo válido → recalculamos descuento por si el subtotal cambió
+        $discount = $coupon->calculateDiscount((float) $order->subtotal);
+
+        $order->update([
+            'discount_amount' => $discount,
+            'final_total' => $this->calculateFinalTotal(
+                (float) $order->subtotal,
+                $discount,
+                (float) $order->delivery_cost
+            ),
+        ]);
+
+        return ['valid' => true, 'order' => $order->fresh(['items', 'district', 'pickupLocal'])];
+    }
+
+    /**
+     * Validaciones de negocio del cupón contra una orden.
+     * Devuelve null si todo OK, o un string con el mensaje de error.
+     */
+    private function validateCouponForOrder(Coupon $coupon, Order $order): ?string
+    {
+        // Vigencia (importante en revalidación: el cupón pudo haberse desactivado o expirado)
+        if (!$coupon->isValid()) {
+            return 'El cupón ya no está activo o expiró.';
+        }
+
+        // Mínimo de compra
+        $minPurchase = (float) ($coupon->min_purchase_amount ?? 0);
+        if ((float) $order->subtotal < $minPurchase) {
+            return 'Tu pedido debe ser mínimo S/ '
+                . number_format($minPurchase, 2)
+                . ' para usar este cupón.';
+        }
+
+        // Límite GLOBAL de usos
+        if (!empty($coupon->max_uses)) {
+            if ($this->countCouponUsage($coupon->id, $order->id) >= $coupon->max_uses) {
+                return 'Este cupón ya alcanzó su límite máximo de usos.';
+            }
+        }
+
+        // Límite POR USUARIO (logueado o invitado)
+        if (!empty($coupon->max_uses_per_user)) {
+            if ($this->countCouponUsageForCustomer($coupon->id, $order) >= $coupon->max_uses_per_user) {
+                return 'Ya usaste este cupón el máximo de veces permitido.';
+            }
+        }
+
+        // El cálculo concreto produce > 0
+        if ($coupon->calculateDiscount((float) $order->subtotal) <= 0) {
+            return 'Este cupón no aplica a tu pedido.';
+        }
+
+        return null;
+    }
+
+    /**
+     * Cuenta cuántas veces se ha usado el cupón en órdenes con pago APROBADO.
+     * Excluye la orden actual (que aún no se ha pagado).
+     */
+    private function countCouponUsage(int $couponId, ?int $excludeOrderId = null): int
+    {
+        $query = Order::where('coupon_id', $couponId)
+            ->whereHas('latestPayment', function ($q) {
+                $q->where('status', Payment::STATUS_APPROVED);
+            });
+
+        if ($excludeOrderId) {
+            $query->where('id', '!=', $excludeOrderId);
+        }
+
+        return $query->count();
+    }
+
+    /**
+     * Cuenta cuántas veces este cliente (logueado o invitado) ha usado el cupón
+     * en órdenes con pago APROBADO.
+     *
+     * - Si la orden tiene user_id → filtra por user_id
+     * - Si es invitado → filtra por guest_email O dni (lo que exista)
+     */
+    private function countCouponUsageForCustomer(int $couponId, Order $order): int
+    {
+        $query = Order::where('coupon_id', $couponId)
+            ->where('id', '!=', $order->id) // no contar la orden actual
+            ->whereHas('latestPayment', function ($q) {
+                $q->where('status', Payment::STATUS_APPROVED);
+            });
+
+        if (!empty($order->user_id)) {
+            // Usuario logueado → identificar por user_id
+            $query->where('user_id', $order->user_id);
+        } else {
+            // Invitado → identificar por email o DNI
+            $email = $order->guest_email;
+            $dni = $order->dni;
+
+            // Si no tenemos ningún identificador, no podemos validar nada
+            if (empty($email) && empty($dni)) {
+                return 0;
+            }
+
+            $query->where(function ($q) use ($email, $dni) {
+                if (!empty($email)) {
+                    $q->orWhere('guest_email', $email);
+                }
+                if (!empty($dni)) {
+                    $q->orWhere('dni', $dni);
+                }
+            });
+        }
+
+        return $query->count();
+    }
+
     /**
      * Quita el cupón y reaplica descuento automático si corresponde.
      */
