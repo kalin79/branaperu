@@ -1,5 +1,8 @@
 <x-filament::page>
     <style>
+        .fi-section{
+            margin-top: 2rem;
+        }
         .order-container {
             width: 100%;
         }

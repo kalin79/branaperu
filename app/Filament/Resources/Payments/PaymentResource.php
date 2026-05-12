@@ -34,15 +34,33 @@ class PaymentResource extends Resource
     protected static ?string $recordTitleAttribute = 'external_id';
 
     /**
-     * Form de edición: SOLO se puede modificar el estado del pago.
-     * El resto se muestra como información de solo lectura.
+     * Estados de pago que SÍ son válidos para una edición manual.
+     * El método de pago, monto y external_id NO se editan: vienen de MP.
+     *
+     * Transiciones permitidas (origen → destino):
+     *   approved → approved   (no hay cambio)
+     *   approved → refunded   (reembolso procesado fuera del flujo MP)
+     *   approved → chargeback (cliente disputó el cobro con su banco)
+     */
+    public static function manualStatusOptions(): array
+    {
+        return [
+            Payment::STATUS_APPROVED => Payment::getStatusOptions()[Payment::STATUS_APPROVED],
+            Payment::STATUS_REFUNDED => Payment::getStatusOptions()[Payment::STATUS_REFUNDED],
+            Payment::STATUS_CHARGEBACK => Payment::getStatusOptions()[Payment::STATUS_CHARGEBACK],
+        ];
+    }
+
+    /**
+     * Form de edición: SOLO se puede modificar el estado del pago,
+     * y únicamente entre opciones manuales válidas.
      */
     public static function form(Schema $form): Schema
     {
         return $form
             ->schema([
                 Section::make('Información del Pago')
-                    ->description('Datos no editables (sincronizados con la pasarela)')
+                    ->description('Datos sincronizados con MercadoPago — no editables.')
                     ->schema([
                         Placeholder::make('order_number')
                             ->label('N° Orden')
@@ -61,7 +79,7 @@ class PaymentResource extends Resource
                             ->content(fn($record) => 'S/ ' . number_format($record?->amount ?? 0, 2)),
 
                         Placeholder::make('payment_method')
-                            ->label('Método')
+                            ->label('Método de Pago')
                             ->content(fn($record) => ucfirst($record?->payment_method ?? '—')),
 
                         Placeholder::make('attempts')
@@ -70,16 +88,33 @@ class PaymentResource extends Resource
                     ])
                     ->columns(2),
 
-                Section::make('Estado del Pago')
-                    ->description('Lo único editable. Útil para reflejar reembolsos, chargebacks o correcciones manuales.')
+                Section::make('Estado del Pedido')
+                    ->description('Avanza el pedido en su flujo: Preparando → Enviado → Entregado, o márcalo como Cancelado, Reembolsado, etc.')
+                    ->schema([
+                        Select::make('order_status')
+                            ->label('Estado actual del pedido')
+                            ->options(Order::getStatusOptions())
+                            ->required()
+                            ->native(false)
+                            ->helperText('Esto actualiza el campo `status` de la Orden asociada.')
+                            ->columnSpanFull(),
+                    ]),
+
+                Section::make('Estado del Pago (uso excepcional)')
+                    ->description(
+                        'El estado del pago lo sincroniza MercadoPago automáticamente. ' .
+                        'Solo cámbialo a mano para reflejar un Reembolso o un Chargeback.'
+                    )
                     ->schema([
                         Select::make('status')
                             ->label('Estado del Pago')
-                            ->options(Payment::getStatusOptions())
+                            ->options(self::manualStatusOptions())
                             ->required()
                             ->native(false)
+                            ->helperText('El método de pago, monto e ID MP vienen de MercadoPago y no se modifican aquí.')
                             ->columnSpanFull(),
-                    ]),
+                    ])
+                    ->collapsed(),
             ]);
     }
 
@@ -87,11 +122,7 @@ class PaymentResource extends Resource
     {
         return $table
             ->query(
-                // 👉 Solo pagos APROBADOS — una fila por orden.
-                //    Si hubiera más de un approved por orden (raro), tomamos el más reciente.
-                //    El conteo de "Intentos" sigue mostrando TODOS los intentos de esa orden
-                //    (aprobados + rechazados + en proceso), porque el withCount es sobre la
-                //    relación payments completa.
+                // Solo pagos APROBADOS — una fila por orden (el más reciente aprobado).
                 Payment::query()
                     ->where('status', Payment::STATUS_APPROVED)
                     ->whereIn('id', function ($q) {
@@ -115,7 +146,6 @@ class PaymentResource extends Resource
                     ->sortable()
                     ->copyable(),
 
-                // === TIPO DE CLIENTE ===
                 Tables\Columns\TextColumn::make('customer_type')
                     ->label('Tipo')
                     ->badge()
@@ -133,7 +163,6 @@ class PaymentResource extends Resource
                         'invitado' => 'Invitado',
                     }),
 
-                // === CLIENTE (usa el accessor del modelo Order) ===
                 Tables\Columns\TextColumn::make('order.customer_name')
                     ->label('Cliente')
                     ->description(fn($record) => $record->order?->customer_email)
@@ -149,7 +178,6 @@ class PaymentResource extends Resource
                     })
                     ->wrap(),
 
-                // === INTENTOS DE PAGO ===
                 Tables\Columns\TextColumn::make('order.payments_count')
                     ->label('Intentos')
                     ->badge()
@@ -227,7 +255,11 @@ class PaymentResource extends Resource
             ])
             ->actions([
                 ViewAction::make()->label('Ver'),
-                EditAction::make()->label('Editar Estado'),
+
+                EditAction::make()
+                    ->label('Editar Estado')
+                    // Solo aparece si el pago está APROBADO (única transición manual válida)
+                    ->visible(fn(Payment $record) => $record->status === Payment::STATUS_APPROVED),
             ])
             ->bulkActions([
                 BulkActionGroup::make([

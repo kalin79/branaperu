@@ -15,7 +15,9 @@ class OrderResource extends Resource
 
     protected static string|\BackedEnum|null $navigationIcon = Heroicon::ShoppingCart;
 
-    protected static string|UnitEnum|null $navigationGroup = 'Order - Ecommerce';
+    // Nota: cuando definimos getNavigationItems() abajo, este `$navigationGroup`
+    // ya no se usa para construir el menú. Se mantiene solo como referencia.
+    protected static string|UnitEnum|null $navigationGroup = 'Ventas - Ecommerce';
 
     protected static ?string $navigationLabel = 'Todas las Ordenes de Venta';
     protected static ?string $label = 'Order';
@@ -42,35 +44,50 @@ class OrderResource extends Resource
     }
 
     /**
-     * Menú lateral organizado bajo "Ventas - Ecommerce"
+     * Menú lateral organizado bajo "Ventas - Ecommerce".
+     *
+     * Cada NavigationItem necesita `isActiveWhen()` para que Filament sepa
+     * cuándo "pintar" el item como activo (highlight) según la ruta actual.
      */
     public static function getNavigationItems(): array
     {
+        // Nombre base de las rutas del recurso (ej: "filament.admin.resources.orders")
+        $routeBase = static::getRouteBaseName();
+
         return [
             NavigationItem::make('Todas las Ordenes')
                 ->icon(Heroicon::ShoppingCart)
                 ->url(static::getUrl('index'))
+                ->isActiveWhen(fn(): bool => request()->routeIs(
+                    $routeBase . '.index',
+                    $routeBase . '.view',          // resalta también al ver una orden
+                ))
                 ->group('Ventas - Ecommerce')
                 ->sort(1),
+
             NavigationItem::make('Carritos Abandonados')
                 ->icon(Heroicon::Clock)
                 ->url(static::getUrl('abandoned'))
+                ->isActiveWhen(fn(): bool => request()->routeIs($routeBase . '.abandoned'))
                 ->group('Ventas - Ecommerce')
                 ->sort(2),
 
             // NavigationItem::make('Ventas Pendientes')
             //     ->icon(Heroicon::Clock)
             //     ->url(static::getUrl('pending'))
+            //     ->isActiveWhen(fn (): bool => request()->routeIs($routeBase . '.pending'))
             //     ->group('Ventas - Ecommerce')
-            //     ->sort(2),
+            //     ->sort(3),
 
             // NavigationItem::make('Ventas Exitosas')
             //     ->icon(Heroicon::CheckCircle)
             //     ->url(static::getUrl('successful'))
+            //     ->isActiveWhen(fn (): bool => request()->routeIs($routeBase . '.successful'))
             //     ->group('Ventas - Ecommerce')
-            //     ->sort(3),
+            //     ->sort(4),
         ];
     }
+
     public static function canAccess(): bool
     {
         return auth()->check() && auth()->user()->hasRole('Administrador');

@@ -11,6 +11,8 @@ use App\Http\Controllers\Frontend\PrivacidadController;
 use App\Http\Controllers\Frontend\CambioController;
 use App\Http\Controllers\Frontend\CartController;
 use App\Http\Controllers\CheckoutController;
+use App\Models\Order;
+use App\Models\Payment;
 // use App\Http\Controllers\PaymentExportController;
 
 use Inertia\Inertia;
@@ -123,4 +125,56 @@ Route::get('/dashboard', function () {
     return Inertia::render('Dashboard/Index');
 })->middleware('auth')->name('dashboard');
 
+
+/*
+|--------------------------------------------------------------------------
+| Impresión de comprobantes (solo administradores)
+|--------------------------------------------------------------------------
+*/
+Route::middleware(['web', 'auth'])
+    ->prefix('admin/orders')
+    ->name('admin.orders.')
+    ->group(function () {
+        Route::get('/{order}/print', function (Order $order) {
+            // Permitir solo a Administrador (ajusta el rol si es distinto)
+            abort_unless(
+                auth()->user()?->hasRole('Administrador'),
+                403
+            );
+
+            $order->load([
+                'user',
+                'items',
+                'payments',
+                'district',
+                'pickupLocal',
+                'coupon',
+            ]);
+
+            return view('admin.orders.print', compact('order'));
+        })->name('print');
+    });
+
+Route::middleware(['web', 'auth'])
+    ->prefix('admin/payments')
+    ->name('admin.payments.')
+    ->group(function () {
+        Route::get('/{payment}/print', function (Payment $payment) {
+            abort_unless(
+                auth()->user()?->hasRole('Administrador'),
+                403
+            );
+
+            $payment->load([
+                'order' => fn($q) => $q->with(['user', 'items', 'district', 'pickupLocal', 'coupon', 'payments']),
+            ]);
+
+            return view('admin.payments.print', compact('payment'));
+        })->name('print');
+    });
+
+
+
 require __DIR__ . '/auth.php';
+
+

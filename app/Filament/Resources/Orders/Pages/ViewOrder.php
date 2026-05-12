@@ -34,13 +34,8 @@ class ViewOrder extends ViewRecord
                 ->label('Imprimir Comprobante')
                 ->icon('heroicon-o-printer')
                 ->color('info')
-                ->action('printReceipt'),
+                ->url(fn() => route('admin.orders.print', $this->record), shouldOpenInNewTab: true),
         ];
-    }
-
-    public function printReceipt()
-    {
-        $this->js('window.print();');
     }
 
     public function getView(): string
