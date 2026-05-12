@@ -10,9 +10,9 @@ use Illuminate\Support\Facades\DB;
 
 class ApprovedOrdersChart extends ChartWidget
 {
-    protected ?string $heading = 'Ventas aprobadas (últimos 3 meses)';
+    protected ?string $heading = 'Ventas aprobadas';
 
-    protected ?string $description = 'Órdenes con pago aprobado por día';
+    protected ?string $description = 'Órdenes con pago aprobado';
 
     // Ocupa todo el ancho del dashboard
     protected int|string|array $columnSpan = 'full';
@@ -47,14 +47,26 @@ class ApprovedOrdersChart extends ChartWidget
         $end = now()->endOfDay();
 
         // Trae las órdenes aprobadas agrupadas por día de pago
-        $rows = Order::query()
+        //
+        // IMPORTANTE: usamos DB::table('orders') (query builder "crudo") en lugar
+        // de Order::query() porque el modelo Order tiene un accessor
+        // getTotalAttribute() que intercepta cualquier propiedad llamada `total`
+        // al hidratarse como modelo y devuelve final_total casteado a float.
+        // Eso "pisaba" el COUNT(...) as total y dejaba la serie de órdenes en 0.
+        //
+        // Como segunda capa de seguridad, además renombramos los alias a
+        // `orders_count` e `income_total` para que jamás colisionen con
+        // accessors / casts del modelo si en el futuro alguien vuelve a usar
+        // Eloquent aquí.
+        $rows = DB::table('orders')
             ->join('payments', 'payments.order_id', '=', 'orders.id')
             ->where('payments.status', Payment::STATUS_APPROVED)
+            ->whereNull('orders.deleted_at') // respetar SoftDeletes manualmente
             ->whereBetween('payments.paid_at', [$start, $end])
             ->select(
                 DB::raw('DATE(payments.paid_at) as day'),
-                DB::raw('COUNT(DISTINCT orders.id) as total'),
-                DB::raw('SUM(orders.final_total) as ingresos'),
+                DB::raw('COUNT(DISTINCT orders.id) as orders_count'),
+                DB::raw('SUM(orders.final_total) as income_total'),
             )
             ->groupBy('day')
             ->orderBy('day')
@@ -71,8 +83,8 @@ class ApprovedOrdersChart extends ChartWidget
             $row = $rows->get($key);
 
             $labels[] = $date->translatedFormat('d M');
-            $orders[] = (int) ($row?->total ?? 0);
-            $income[] = (float) ($row?->ingresos ?? 0);
+            $orders[] = (int) ($row?->orders_count ?? 0);
+            $income[] = (float) ($row?->income_total ?? 0);
         }
 
         return [
