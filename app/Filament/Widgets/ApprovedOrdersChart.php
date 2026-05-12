@@ -1,0 +1,141 @@
+<?php
+
+namespace App\Filament\Widgets;
+
+use App\Models\Order;
+use App\Models\Payment;
+use Carbon\CarbonPeriod;
+use Filament\Widgets\ChartWidget;
+use Illuminate\Support\Facades\DB;
+
+class ApprovedOrdersChart extends ChartWidget
+{
+    protected ?string $heading = 'Ventas aprobadas (últimos 3 meses)';
+
+    protected ?string $description = 'Órdenes con pago aprobado por día';
+
+    // Ocupa todo el ancho del dashboard
+    protected int|string|array $columnSpan = 'full';
+
+    // Orden en el dashboard (más bajo = aparece antes)
+    protected static ?int $sort = 2;
+
+    /**
+     * Filtros disponibles arriba del gráfico
+     */
+    protected function getFilters(): ?array
+    {
+        return [
+            'last_30' => 'Últimos 30 días',
+            'last_90' => 'Últimos 3 meses',
+            'last_180' => 'Últimos 6 meses',
+        ];
+    }
+
+    public ?string $filter = 'last_90';
+
+    protected function getData(): array
+    {
+        // Determina rango según filtro
+        $days = match ($this->filter) {
+            'last_30' => 30,
+            'last_180' => 180,
+            default => 90,
+        };
+
+        $start = now()->subDays($days - 1)->startOfDay();
+        $end = now()->endOfDay();
+
+        // Trae las órdenes aprobadas agrupadas por día de pago
+        $rows = Order::query()
+            ->join('payments', 'payments.order_id', '=', 'orders.id')
+            ->where('payments.status', Payment::STATUS_APPROVED)
+            ->whereBetween('payments.paid_at', [$start, $end])
+            ->select(
+                DB::raw('DATE(payments.paid_at) as day'),
+                DB::raw('COUNT(DISTINCT orders.id) as total'),
+                DB::raw('SUM(orders.final_total) as ingresos'),
+            )
+            ->groupBy('day')
+            ->orderBy('day')
+            ->get()
+            ->keyBy('day');
+
+        // Construye una serie diaria continua (rellena días sin ventas con 0)
+        $labels = [];
+        $orders = [];
+        $income = [];
+
+        foreach (CarbonPeriod::create($start, $end) as $date) {
+            $key = $date->format('Y-m-d');
+            $row = $rows->get($key);
+
+            $labels[] = $date->translatedFormat('d M');
+            $orders[] = (int) ($row?->total ?? 0);
+            $income[] = (float) ($row?->ingresos ?? 0);
+        }
+
+        return [
+            'datasets' => [
+                [
+                    'label' => 'Órdenes aprobadas',
+                    'data' => $orders,
+                    'borderColor' => '#10b981',
+                    'backgroundColor' => 'rgba(16, 185, 129, 0.15)',
+                    'tension' => 0.3,
+                    'fill' => true,
+                    'yAxisID' => 'y',
+                ],
+                [
+                    'label' => 'Ingresos (S/)',
+                    'data' => $income,
+                    'borderColor' => '#6366f1',
+                    'backgroundColor' => 'rgba(99, 102, 241, 0.1)',
+                    'tension' => 0.3,
+                    'fill' => false,
+                    'yAxisID' => 'y1',
+                    'hidden' => true, // empieza oculta; el usuario la activa con el click en la leyenda
+                ],
+            ],
+            'labels' => $labels,
+        ];
+    }
+
+    protected function getType(): string
+    {
+        return 'line';
+    }
+
+    /**
+     * Opciones extra de Chart.js (eje secundario para ingresos)
+     */
+    protected function getOptions(): array
+    {
+        return [
+            'scales' => [
+                'y' => [
+                    'type' => 'linear',
+                    'position' => 'left',
+                    'beginAtZero' => true,
+                    'ticks' => [
+                        'precision' => 0,
+                    ],
+                    'title' => [
+                        'display' => true,
+                        'text' => 'N° de órdenes',
+                    ],
+                ],
+                'y1' => [
+                    'type' => 'linear',
+                    'position' => 'right',
+                    'beginAtZero' => true,
+                    'grid' => ['drawOnChartArea' => false],
+                    'title' => [
+                        'display' => true,
+                        'text' => 'S/ Ingresos',
+                    ],
+                ],
+            ],
+        ];
+    }
+}

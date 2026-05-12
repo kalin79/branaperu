@@ -233,6 +233,9 @@ class OrderPaymentService
             'final_total' => $this->calculateFinalTotal((float) $order->subtotal, $discount, (float) $order->delivery_cost),
         ]);
 
+        // ✅ Sincroniza el monto del pago pendiente con el nuevo final_total
+        $this->syncPendingPaymentAmount($order);
+
         return ['success' => true, 'order' => $order->fresh(['items', 'district', 'pickupLocal'])];
     }
 
@@ -287,6 +290,9 @@ class OrderPaymentService
                 (float) $order->delivery_cost
             ),
         ]);
+
+        // ✅ Sincroniza el monto del pago pendiente
+        $this->syncPendingPaymentAmount($order);
 
         return ['valid' => true, 'order' => $order->fresh(['items', 'district', 'pickupLocal'])];
     }
@@ -409,7 +415,11 @@ class OrderPaymentService
             ),
         ]);
 
+        // ✅ Sincroniza el monto del pago pendiente
+        $this->syncPendingPaymentAmount($order);
+
         // Reaplica descuento automático si el subtotal califica
+        // (applyAutoDiscountIfEligible se encarga de re-sincronizar el pago)
         $order = $this->applyAutoDiscountIfEligible($order->fresh());
 
         return [
@@ -442,6 +452,8 @@ class OrderPaymentService
                     'discount_amount' => 0,
                     'final_total' => $this->calculateFinalTotal((float) $order->subtotal, 0, (float) $order->delivery_cost),
                 ]);
+                // ✅ Sincroniza el monto del pago pendiente
+                $this->syncPendingPaymentAmount($order);
             }
             return $order->fresh();
         }
@@ -455,6 +467,9 @@ class OrderPaymentService
             'discount_amount' => $discount,
             'final_total' => $this->calculateFinalTotal((float) $order->subtotal, $discount, (float) $order->delivery_cost),
         ]);
+
+        // ✅ Sincroniza el monto del pago pendiente
+        $this->syncPendingPaymentAmount($order);
 
         return $order->fresh();
     }
@@ -471,6 +486,10 @@ class OrderPaymentService
                 (float) $order->delivery_cost
             ),
         ]);
+
+        // ✅ Sincroniza el monto del pago pendiente
+        $this->syncPendingPaymentAmount($order);
+
         return $order->fresh();
     }
 
@@ -480,5 +499,21 @@ class OrderPaymentService
     private function calculateFinalTotal(float $subtotal, float $discount, ?float $deliveryCost): float
     {
         return round(max(0, $subtotal - $discount + ($deliveryCost ?? 0)), 2);
+    }
+
+    /**
+     * Sincroniza el monto del Payment pendiente con el final_total actual
+     * de la orden. Se llama después de aplicar/quitar cupón, descuento
+     * automático, o recalcular totales, para evitar que MP cobre un monto
+     * distinto al final_total real de la orden.
+     *
+     * Solo afecta pagos en estado PENDING (los aprobados/rechazados ya
+     * tienen su monto histórico y no debe alterarse).
+     */
+    private function syncPendingPaymentAmount(Order $order): void
+    {
+        Payment::where('order_id', $order->id)
+            ->where('status', Payment::STATUS_PENDING)
+            ->update(['amount' => $order->final_total]);
     }
 }

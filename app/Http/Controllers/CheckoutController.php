@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\Frontend;
+namespace App\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use App\Services\OrderPaymentService;
@@ -194,7 +194,7 @@ class CheckoutController extends Controller
      */
     private function buildMpItemsFromOrder(Order $order): array
     {
-        return $order->items->map(function ($item) {
+        $items = $order->items->map(function ($item) {
             return [
                 'title' => $item->product_name,
                 'quantity' => (int) $item->quantity,
@@ -202,6 +202,34 @@ class CheckoutController extends Controller
                 'currency_id' => 'PEN',
             ];
         })->toArray();
+
+        // ✅ Agrega el costo de envío como item
+        if ($order->delivery_cost > 0) {
+            $items[] = [
+                'title' => 'Envío',
+                'quantity' => 1,
+                'unit_price' => (float) $order->delivery_cost,
+                'currency_id' => 'PEN',
+            ];
+        }
+
+        // ✅ Agrega el descuento como un item con unit_price NEGATIVO
+        if ($order->discount_amount > 0) {
+            $label = $order->coupon_code
+                ? "Descuento cupón {$order->coupon_code}"
+                : ($order->discount_rule_name
+                    ? "Descuento: {$order->discount_rule_name}"
+                    : 'Descuento');
+
+            $items[] = [
+                'title' => $label,
+                'quantity' => 1,
+                'unit_price' => -1 * (float) $order->discount_amount,
+                'currency_id' => 'PEN',
+            ];
+        }
+
+        return $items;
     }
 
     /**
