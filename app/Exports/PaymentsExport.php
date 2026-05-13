@@ -61,7 +61,7 @@ class PaymentsExport implements FromQuery, WithHeadings, WithMapping, WithStyles
             'Apellido',
             'Email',
             'Teléfono',
-
+            'Fecha de Nacimiento',  // ← NUEVO
             // === ORDEN ===
             'N° Orden',
             'Estado Pedido',
@@ -115,6 +115,8 @@ class PaymentsExport implements FromQuery, WithHeadings, WithMapping, WithStyles
             $apellido,
             $email,
             $order?->guest_phone,
+            // ✅ NUEVO
+            ($order?->birth_date ?? $order?->user?->birth_date)?->format('d/m/Y'),
 
             // Orden
             $order?->order_number,
@@ -139,8 +141,8 @@ class PaymentsExport implements FromQuery, WithHeadings, WithMapping, WithStyles
     public function columnFormats(): array
     {
         return [
-            'L' => '"S/ "#,##0.00',  // Monto pago
-            'P' => '"S/ "#,##0.00',  // Total orden
+            'M' => '"S/ "#,##0.00',  // Monto pago (antes 'L')
+            'Q' => '"S/ "#,##0.00',  // Total orden (antes 'P')
         ];
     }
 

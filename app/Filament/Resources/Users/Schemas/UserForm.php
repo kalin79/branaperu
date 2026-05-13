@@ -9,7 +9,7 @@ use Filament\Forms\Components\Textarea;
 use Filament\Schemas\Schema;
 use Spatie\Permission\Models\Role;
 use App\Models\District;
-
+use Filament\Forms\Components\DatePicker;
 class UserForm
 {
     public static function configure(Schema $schema): Schema
@@ -38,6 +38,12 @@ class UserForm
                             ->label('Teléfono')
                             ->tel()
                             ->maxLength(20),
+                        DatePicker::make('birth_date')
+                            ->label('Fecha de nacimiento')
+                            ->native(false)
+                            ->displayFormat('d/m/Y')
+                            ->maxDate(now())
+                            ->placeholder('Selecciona una fecha'),
                         Select::make('document_type')
                             ->label('Tipo de documento')
                             ->options([

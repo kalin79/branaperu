@@ -7,6 +7,7 @@ const form = useForm({
     last_name: "",
     email: "",
     phone: "",
+    birth_date: "", // ← NUEVO
     password: "",
     password_confirmation: "",
 });
@@ -91,6 +92,20 @@ const submit = () => {
                 </div>
                 <p v-if="form.errors.phone" class="authError">
                     {{ form.errors.phone }}
+                </p>
+            </div>
+
+            <div class="authField">
+                <div class="authInputWrap">
+                    <input
+                        v-model="form.birth_date"
+                        type="date"
+                        placeholder="Fecha de nacimiento (opcional)"
+                        :class="{ 'has-error': form.errors.birth_date }"
+                    />
+                </div>
+                <p v-if="form.errors.birth_date" class="authError">
+                    {{ form.errors.birth_date }}
                 </p>
             </div>
 

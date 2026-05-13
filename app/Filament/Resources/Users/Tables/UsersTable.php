@@ -24,6 +24,11 @@ class UsersTable
                     ->label('Email')
                     ->searchable()
                     ->sortable(),
+                Tables\Columns\TextColumn::make('birth_date')
+                    ->label('Fecha de nacimiento')
+                    ->date('d/m/Y')
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true),
 
                 Tables\Columns\TextColumn::make('roles.name')
                     ->label('Rol')

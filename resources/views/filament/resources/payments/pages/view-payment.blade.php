@@ -141,6 +141,12 @@
                         <p class="detail-label">DNI</p>
                         <p class="detail-value">{{ $record->order?->dni ?? '—' }}</p>
                     </div>
+                    <div>
+                        <p class="detail-label">Fecha de nacimiento</p>
+                        <p class="detail-value">
+                            {{ $record->order?->display_birth_date?->format('d/m/Y') ?? '—' }}
+                        </p>
+                    </div>
                 </div>
             </div>
         </x-filament::section>

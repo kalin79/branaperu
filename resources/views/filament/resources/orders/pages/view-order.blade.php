@@ -319,6 +319,13 @@
                             <p class="field-value">{{ $record->dni ?? '—' }}</p>
                         </div>
 
+                        <div>
+                            <p class="label">Fecha de nacimiento</p>
+                            <p class="field-value">
+                                {{ $record->display_birth_date?->format('d/m/Y') ?? '—' }}
+                            </p>
+                        </div>
+
                         @if ($record->user_id)
                             <div>
                                 <p class="label">ID Usuario</p>

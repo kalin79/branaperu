@@ -2,13 +2,17 @@
 
 namespace App\Models;
 
+
+use Filament\Models\Contracts\FilamentUser;
+use Filament\Panel;
+
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Spatie\Permission\Traits\HasRoles;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class User extends Authenticatable
+class User extends Authenticatable implements FilamentUser
 {
     use HasFactory, Notifiable, HasRoles;
 
@@ -18,6 +22,7 @@ class User extends Authenticatable
         'email',
         'password',
         'phone',
+        'birth_date',            // ← NUEVO
         'document_type',
         'document_number',
         'department',
@@ -37,6 +42,7 @@ class User extends Authenticatable
         'email_verified_at' => 'datetime',
         'password' => 'hashed',
         'status' => 'string',
+        'birth_date' => 'date',  // ← NUEVO
     ];
 
     // ====================== ESTADOS ======================
@@ -87,5 +93,14 @@ class User extends Authenticatable
     public function canAccessFilament(): bool
     {
         return $this->hasAnyRole(['Administrador', 'Editor']);
+    }
+    /**
+     * Filament invoca este método antes de permitir el acceso al panel.
+     * Devuelve true SOLO para Administrador y Editor.
+     */
+    public function canAccessPanel(Panel $panel): bool
+    {
+        return $this->hasAnyRole(['Administrador', 'Editor'])
+            && $this->isActive();
     }
 }

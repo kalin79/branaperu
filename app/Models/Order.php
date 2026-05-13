@@ -43,6 +43,7 @@ class Order extends Model
         'guest_last_name',     // ← NUEVO
         'guest_email',
         'guest_phone',
+        'birth_date',         // ← NUEVO
         'dni',                 // ← NUEVO
 
         // Método de entrega
@@ -86,6 +87,7 @@ class Order extends Model
         'accepted_terms' => 'boolean',
         'accepted_privacy' => 'boolean',
         'accepted_marketing' => 'boolean',
+        'birth_date' => 'date', // ← NUEVO
     ];
 
     // ====================== ESTADOS DE LA ORDEN ======================
@@ -233,6 +235,12 @@ class Order extends Model
     public function hasDiscount(): bool
     {
         return $this->discount_amount > 0;
+    }
+
+    public function getDisplayBirthDateAttribute(): ?\Carbon\Carbon
+    {
+        return $this->birth_date
+            ?? $this->user?->birth_date;
     }
 
     // === Helpers método de entrega ===

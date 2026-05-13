@@ -54,6 +54,7 @@ const schema = toTypedSchema(
             .string()
             .min(8, "El DNI debe tener al menos 8 caracteres")
             .max(12, "Documento demasiado largo"),
+        birth_date: z.string().optional(), // ← NUEVO (opcional)
         delivery_district_id: z
             .number({ invalid_type_error: "Selecciona un distrito" })
             .min(1, "Selecciona un distrito"),
@@ -92,6 +93,7 @@ const [shipping_address, shipping_addressAttrs] =
 const [delivery_reference, delivery_referenceAttrs] =
     defineField("delivery_reference");
 const [guest_phone, guest_phoneAttrs] = defineField("guest_phone");
+const [birth_date, birth_dateAttrs] = defineField("birth_date");
 const [accepted_terms, accepted_termsAttrs] = defineField("accepted_terms");
 const [accepted_privacy, accepted_privacyAttrs] =
     defineField("accepted_privacy");
@@ -106,6 +108,7 @@ onMounted(() => {
         guest_name.value = user.value.name || "";
         guest_last_name.value = user.value.last_name || "";
         guest_phone.value = user.value.phone || "";
+        birth_date.value = user.value.birth_date || ""; // ← NUEVO
     }
 });
 
@@ -115,6 +118,7 @@ const inertiaForm = useInertiaForm({
     guest_last_name: "",
     guest_email: "",
     guest_phone: "",
+    birth_date: "", // ← NUEVO
     delivery_district_id: null,
     delivery_full_name: "",
     shipping_address: "",
@@ -137,6 +141,7 @@ const onSubmit = handleSubmit((values) => {
     inertiaForm.guest_last_name = values.guest_last_name;
     inertiaForm.guest_email = values.guest_email;
     inertiaForm.guest_phone = values.guest_phone;
+    inertiaForm.birth_date = values.birth_date || null; // ← NUEVO
     inertiaForm.dni = values.dni;
     inertiaForm.delivery_district_id = values.delivery_district_id;
     inertiaForm.shipping_address = values.shipping_address;
@@ -448,6 +453,32 @@ const removeProduct = (productId) => {
                                     </div>
                                     <p class="errorMsg" v-if="errors.dni">
                                         {{ errors.dni }}
+                                    </p>
+                                </div>
+
+                                <div class="validateRow">
+                                    <div class="rowForm">
+                                        <div class="inputContainer">
+                                            <label
+                                                >Fecha de nacimiento
+                                                (opcional)</label
+                                            >
+                                            <input
+                                                v-model="birth_date"
+                                                v-bind="birth_dateAttrs"
+                                                type="date"
+                                                :class="{
+                                                    'input-error':
+                                                        errors.birth_date,
+                                                }"
+                                            />
+                                        </div>
+                                    </div>
+                                    <p
+                                        class="errorMsg"
+                                        v-if="errors.birth_date"
+                                    >
+                                        {{ errors.birth_date }}
                                     </p>
                                 </div>
 

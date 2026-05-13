@@ -122,5 +122,6 @@ return [
         'driver' => env('APP_MAINTENANCE_DRIVER', 'file'),
         'store' => env('APP_MAINTENANCE_STORE', 'database'),
     ],
+    'admin_panel_url' => env('ADMIN_PANEL_URL', 'https://admin.branaperu.com/admin'),
 
 ];

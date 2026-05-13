@@ -42,6 +42,7 @@ class RegisteredUserController extends Controller
             'last_name' => ['required', 'string', 'max:50'],
             'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:' . User::class],
             'phone' => ['required', 'string', 'min:9', 'max:20', 'regex:/^[0-9+\s\-]+$/'],
+            'birth_date' => ['nullable', 'date', 'before:today'],
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
         ]);
 
@@ -50,20 +51,33 @@ class RegisteredUserController extends Controller
             'last_name' => $validated['last_name'],
             'email' => $validated['email'],
             'phone' => $validated['phone'],
+            'birth_date' => $validated['birth_date'] ?? null,
             'password' => Hash::make($validated['password']),
             'status' => User::STATUS_ACTIVE,
         ]);
 
-        // Asignar rol Cliente automáticamente (Spatie\Permission)
         if (\Spatie\Permission\Models\Role::where('name', 'Cliente')->exists()) {
             $user->assignRole('Cliente');
         }
 
         event(new Registered($user));
-
         Auth::login($user);
 
-        // Redirigir a "intended" (ej. /checkout) o al dashboard
-        return redirect()->intended(route('dashboard', absolute: false));
+        // Si vino con un redirect específico (ej. checkout), respétalo
+        $intended = session()->pull('url.intended');
+
+        // ↓ TEMPORAL — pega esto
+        // dd([
+        //     'intended' => $intended,
+        //     'dashboard_url' => route('dashboard'),
+        //     'env' => app()->environment(),
+        // ]);
+
+        if ($intended && $intended !== '/') {
+            return redirect($intended);
+        }
+
+        return redirect()->route('dashboard');
+
     }
 }

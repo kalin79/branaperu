@@ -62,6 +62,7 @@ class CheckoutController extends Controller
             'guest_last_name' => 'required|string|max:255',
             'guest_email' => 'required|email|max:255',
             'guest_phone' => 'required|string|max:20',
+            'birth_date' => 'nullable|date|before:today', // ← NUEVO
             'dni' => 'required|string|max:20',
             'delivery_district_id' => 'required|exists:districts,id',
             'shipping_address' => 'required|string|max:500',
@@ -84,6 +85,7 @@ class CheckoutController extends Controller
             'guest_last_name' => $validated['guest_last_name'],
             'guest_email' => $validated['guest_email'],
             'guest_phone' => $validated['guest_phone'],
+            'birth_date' => $validated['birth_date'] ?? null, // ← NUEVO
 
             'delivery_full_name' => trim($validated['guest_name'] . ' ' . $validated['guest_last_name']),
             'delivery_district_id' => $validated['delivery_district_id'],
@@ -103,6 +105,14 @@ class CheckoutController extends Controller
         $order = $this->orderService->createOrderWithPayment($orderData, [
             'provider' => 'mercadopago',
         ]);
+        // ✅ Si el usuario está logueado y aún no tiene fecha de nacimiento,
+        // la guardamos en su perfil para futuros checkouts.
+        if (auth()->check() && !empty($validated['birth_date'])) {
+            $user = auth()->user();
+            if (empty($user->birth_date)) {
+                $user->update(['birth_date' => $validated['birth_date']]);
+            }
+        }
         session()->forget('cart');
         return redirect()->route('checkout.payment', $order->order_number);
     }

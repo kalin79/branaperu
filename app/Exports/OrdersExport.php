@@ -52,6 +52,7 @@ class OrdersExport implements FromQuery, WithHeadings, WithMapping, WithStyles, 
             'Email',
             'Teléfono',
             'DNI',
+            'Fecha de Nacimiento',   // ← NUEVO
 
             // === ORDEN ===
             'N° Orden',
@@ -146,6 +147,8 @@ class OrdersExport implements FromQuery, WithHeadings, WithMapping, WithStyles, 
             $email,
             $order->guest_phone,
             $order->dni,
+            // ✅ NUEVO: con fallback al usuario
+            ($order->birth_date ?? $order->user?->birth_date)?->format('d/m/Y'),
 
             // Orden
             $order->order_number,
@@ -188,11 +191,11 @@ class OrdersExport implements FromQuery, WithHeadings, WithMapping, WithStyles, 
     public function columnFormats(): array
     {
         return [
-            'L' => '"S/ "#,##0.00',  // Subtotal
-            'M' => '"S/ "#,##0.00',  // Descuento Total
-            'N' => '"S/ "#,##0.00',  // Costo Envío
-            'O' => '"S/ "#,##0.00',  // Total Final
-            'T' => '0.00"%"',         // Descuento Auto - %
+            'M' => '"S/ "#,##0.00',  // Subtotal (antes 'L')
+            'N' => '"S/ "#,##0.00',  // Descuento Total (antes 'M')
+            'O' => '"S/ "#,##0.00',  // Costo Envío (antes 'N')
+            'P' => '"S/ "#,##0.00',  // Total Final (antes 'O')
+            'U' => '0.00"%"',        // Descuento Auto - % (antes 'T')
         ];
     }
 
