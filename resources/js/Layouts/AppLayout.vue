@@ -5,6 +5,7 @@
             <meta name="description" :content="description_meta" />
             <meta property="og:title" :content="title_meta + ' | Brana'" />
             <meta property="og:description" :content="description_meta" />
+            <meta name="robots" :content="robots_meta" />
         </Head>
 
         <Header :cart="cart" :total="total" />

@@ -4,6 +4,11 @@
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
 
+        {{-- ↓ AGREGAR ESTO ↓ --}}
+        <meta name="robots" content="index, follow, max-image-preview:large">
+        <meta name="googlebot" content="index, follow">
+        {{-- ... resto del head ... --}}
+
         <title inertia>{{ config('app.name', 'Laravel') }}</title>
 
         <!-- Fonts -->

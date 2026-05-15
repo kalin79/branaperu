@@ -30,7 +30,7 @@
 
 .container-fluid2 {
     width: 100%;
-    padding: 0 0 0 5vw;
+    padding: 0 5vw 0 5vw;
 
     // ==================== BREAKPOINTS ====================
 
@@ -42,4 +42,14 @@
     @media (min-width: 1600px) {
         padding: 0 0 0 8vw;
     }
+}
+
+.errorMsg {
+    border: 1px solid rgb(244, 74, 74);
+    background: rgb(244, 119, 119);
+    @include font-descripcionPequena;
+    color: white;
+    padding: 0.75rem;
+    border-radius: 8px;
+    margin-top: 1rem;
 }

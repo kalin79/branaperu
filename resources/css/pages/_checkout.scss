@@ -7,7 +7,10 @@
         justify-content: flex-start;
         align-items: flex-end;
         gap: 1rem;
-        padding-bottom: 5rem;
+        padding-bottom: 0rem;
+        @media screen and (min-width: 992px) {
+            padding-bottom: 5rem;
+        }
         .imgContainer {
             flex: 0 0 40px;
             img {
@@ -29,8 +32,10 @@
         grid-template-columns: repeat(12, 1fr);
         gap: 2rem;
         .myProductsContainer {
-            grid-column: 1 / span 7;
-
+            grid-column: 1 / -1;
+            @media screen and (min-width: 992px) {
+                grid-column: 1 / span 7;
+            }
             .cardCheckoutProduct {
                 display: flex;
                 justify-content: flex-start;
@@ -42,14 +47,21 @@
                     display: flex;
                     justify-content: space-between;
                     align-items: flex-start;
-                    padding-right: 3.5rem;
+                    padding-right: 0.5rem;
                     flex: 1;
+                    @media screen and (min-width: 992px) {
+                        padding-right: 3.5rem;
+                    }
                     .rightContainer {
                         display: flex;
                         flex-direction: column;
                         align-items: center;
                         justify-content: flex-start;
-                        padding-top: 3rem;
+                        padding-top: 1rem;
+                        flex: 1;
+                        @media screen and (min-width: 992px) {
+                            padding-top: 3rem;
+                        }
                         button {
                             border: 0px solid red;
                             margin-top: 1rem;
@@ -61,7 +73,12 @@
                         }
                     }
                     .leftContainer {
-                        padding-top: 1.5rem;
+                        padding-top: 0.5rem;
+                        flex: 0 0 150px;
+                        @media screen and (min-width: 992px) {
+                            padding-top: 1.5rem;
+                            flex: 0 0 250px;
+                        }
                         .controlProduct {
                             border: 1px solid #9d9d9d;
                             padding: 0.5rem;
@@ -105,10 +122,15 @@
                     }
                 }
                 .headerCard {
-                    flex: 0 0 190px;
+                    flex: 0 0 90px;
+                    height: 117px;
                     border: 1px solid $verde;
                     overflow: hidden;
                     border-radius: 10px;
+                    @media screen and (min-width: 992px) {
+                        flex: 0 0 190px;
+                        height: auto;
+                    }
                     img {
                         width: 100%;
                         height: auto;
@@ -118,7 +140,10 @@
             }
         }
         .myDataContainer {
-            grid-column: 8 / span 4;
+            grid-column: 1 / -1;
+            @media screen and (min-width: 992px) {
+                grid-column: 8 / span 4;
+            }
             .formContainer {
                 form {
                     .validateRow {

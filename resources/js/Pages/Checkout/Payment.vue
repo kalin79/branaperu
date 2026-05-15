@@ -787,10 +787,7 @@ const goEditCart = () => router.visit("/cart");
                                         </button>
                                     </div>
                                 </div>
-                                <p
-                                    v-if="couponError"
-                                    class="text-xs text-red-500 mt-2"
-                                >
+                                <p v-if="couponError" class="errorMsg">
                                     {{ couponError }}
                                 </p>
                             </div>

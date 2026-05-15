@@ -79,6 +79,32 @@
     border-bottom: 4px solid rgba($verdeClaro, 1);
     position: relative;
     overflow: hidden;
+    .image-pc {
+        display: none;
+        width: 100%;
+        height: 100%;
+        @media screen and (min-width: 992px) {
+            display: block;
+        }
+        img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+    }
+    .image-mobil {
+        display: block;
+        width: 100%;
+        height: 100%;
+        @media screen and (min-width: 992px) {
+            display: none;
+        }
+        img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+    }
     .itemContainer {
         width: 100%;
         height: 400px;

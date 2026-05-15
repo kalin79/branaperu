@@ -11,6 +11,8 @@ use App\Http\Controllers\Frontend\PrivacidadController;
 use App\Http\Controllers\Frontend\CambioController;
 use App\Http\Controllers\Frontend\CartController;
 use App\Http\Controllers\CheckoutController;
+use App\Http\Controllers\Frontend\ContactController; // ← NUEVO
+use App\Http\Controllers\Frontend\ClaimController;
 use App\Models\Order;
 use App\Models\Payment;
 // use App\Http\Controllers\PaymentExportController;
@@ -53,6 +55,16 @@ Route::get('/politica-de-cambio', [CambioController::class, 'index'])
 Route::get('/contacto', function () {
     return Inertia::render('Contact');
 })->name('contact');
+
+Route::get('/libro-de-reclamaciones', [ClaimController::class, 'index'])
+    ->name('libro-de-reclamaciones');
+
+Route::post('/libro-de-reclamaciones', [ClaimController::class, 'store'])
+    ->name('claims.store');
+
+// ====================== CONTACTO ======================
+Route::get('/contacto', [ContactController::class, 'index'])->name('contact');
+Route::post('/contacto', [ContactController::class, 'send'])->name('contact.send');
 
 // ====================== CART ======================
 Route::post('/cart/add', [CartController::class, 'add'])->name('cart.add');

@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use Inertia\Inertia;
 use App\Models\Category;
 use App\Models\Product;
+use App\Models\Banner;
+use App\Models\PersonalCareSection;
 class HomeController extends Controller
 {
     public function index()
@@ -32,8 +34,40 @@ class HomeController extends Controller
             ]);
         });
 
+        $banners = Banner::where('is_active', true)
+            ->orderBy('order')
+            ->get()
+            ->map(fn($b) => [
+                'titulo' => $b->title,
+                'tipo' => $b->type,
+                'imagepc' => $b->image_pc ? asset('storage/' . $b->image_pc) : null,
+                'imagemobile' => $b->image_mobile ? asset('storage/' . $b->image_mobile) : null,
+                'video_file' => $b->video_file ? asset('storage/' . $b->video_file) : null,
+                'youtube_url' => $b->youtube_url,
+            ]);
+
+        $personalCare = PersonalCareSection::with([
+            'features' => fn($q) => $q->where('is_active', true)->orderBy('order')
+        ])->first();
+
+        $cuidados = $personalCare ? [
+            'titulo' => $personalCare->title,
+            'subtitulo' => $personalCare->subtitle,
+            'descripcion' => $personalCare->description,
+            'icono' => $personalCare->icon ? asset('storage/' . $personalCare->icon) : null,
+            'imagen_fondo' => $personalCare->background_image ? asset('storage/' . $personalCare->background_image) : null,
+            'caracteristicas' => $personalCare->features->map(fn($f) => [
+                'titulo' => $f->title,
+                'descripcion' => $f->description,
+                'icono' => $f->icon ? asset('storage/' . $f->icon) : null,
+                'color' => $f->color,
+            ])->values(),
+        ] : null;
+
         return Inertia::render('Home', [
             'categories' => $parentCategories,
+            'banners' => $banners,
+            'cuidados' => $cuidados,
             'title_meta' => 'Acerca de Brana',
             'description_meta' => 'Texto descriptivo...',
         ]);

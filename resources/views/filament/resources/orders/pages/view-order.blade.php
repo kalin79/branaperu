@@ -491,12 +491,15 @@
                             @foreach ($record->items as $item)
                                 <tr>
                                     <td>
+                                        @if ($item->product_image)
                                         <img
-                                            src="{{ $item->product_image ? asset('storage/' . $item->product_image) : asset('images/no-image.png') }}"
+                                            src="{{ asset('storage/' . $item->product_image) }}"
                                             alt="{{ $item->product_name }}"
                                             class="product-img"
-                                            onerror="this.src='{{ asset('images/no-image.png') }}'"
+                                            onerror="this.onerror=null; this.style.display='none';"
                                         >
+                                        @endif
+
                                     </td>
                                     <td>
                                         <div class="product-name">{{ $item->product_name }}</div>

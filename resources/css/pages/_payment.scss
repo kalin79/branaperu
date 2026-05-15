@@ -235,7 +235,10 @@
             }
         }
         .leftContainer {
-            grid-column: 1 / span 5;
+            grid-column: 1 / -1;
+            @media screen and (min-width: 992px) {
+                grid-column: 1 / span 5;
+            }
             .formContacto {
                 margin-top: 1rem;
                 h2 {
@@ -329,6 +332,14 @@
                         padding: 1rem 1rem;
                         border: 1px solid #dbdbdb;
                         border-radius: 10px;
+                        .customRadio {
+                            .checkmark {
+                                flex: 0 0 22px;
+                            }
+                            .addresLeft {
+                                flex: 1;
+                            }
+                        }
                         .addressBox {
                             display: flex;
                             justify-content: space-between;
@@ -417,12 +428,18 @@
             }
         }
         .rightContainer {
-            grid-column: 7 / -1;
+            grid-column: 1 / -1;
             background: #f1f1f1;
+            @media screen and (min-width: 992px) {
+                grid-column: 7 / -1;
+            }
             .viewOrdenContainer {
-                padding: 5rem 2rem 0 5rem;
+                padding: 2rem 2rem 0 1rem;
                 position: sticky;
                 top: 2rem;
+                @media screen and (min-wdth: 992px) {
+                    padding: 5rem 2rem 0 5rem;
+                }
                 .productBox {
                     .itemProduct {
                         display: flex;
@@ -507,8 +524,11 @@
                         .rowInputForm {
                             padding: 1rem;
                             background: white;
-                            flex: 0 0 300px;
+                            flex: 0 0 180px;
                             margin: 0;
+                            @media screen and (min-width: 992px) {
+                                flex: 0 0 300px;
+                            }
                         }
                         .btnCupon {
                             flex: 1;
@@ -562,6 +582,9 @@
                                 @include font-descripcionPequena;
                                 color: #959595;
                                 font-weight: 500;
+                            }
+                            br {
+                                display: block;
                             }
                         }
                     }

@@ -4,27 +4,15 @@
         <div class="container-fluid">
             <div class="headerContainer">
                 <div class="leftContainer">
-                    <h3>NATURAL, SENSORIAL, REAL.</h3>
-                    <h2>
-                        Brana: Cuidado <br />
-                        personal con <br />
-                        propósito
-                    </h2>
+                    <h3 v-html="data.subtitulo"></h3>
+                    <h2 v-html="data.titulo"></h2>
                 </div>
                 <div class="rightcontainer">
                     <div class="iconContainer">
-                        <img
-                            :src="iconPlanta"
-                            alt="Brana: Cuidado personal con propósito"
-                        />
+                        <img :src="data.icono" :alt="data.titulo" />
                     </div>
                     <div class="infoContainer">
-                        <p>
-                            Creamos experiencias auténticas que nutren tu piel y
-                            elevan tus sentidos, con ingredientes de origen
-                            natural, fórmulas honestas y un compromiso profundo
-                            con el bienestar y la sostenibilidad.
-                        </p>
+                        <p v-html="data.descripcion"></p>
                     </div>
                 </div>
             </div>
@@ -32,7 +20,7 @@
                 <div class="bloquesContainer">
                     <div
                         class="itemContainer"
-                        v-for="(item, index) in data"
+                        v-for="(item, index) in data.caracteristicas"
                         :key="index"
                         :class="item.color"
                     >
@@ -46,10 +34,7 @@
                     </div>
                 </div>
                 <div class="imageCenter">
-                    <img
-                        :src="imgCenter"
-                        alt="Brana: Cuidado personal con propósito"
-                    />
+                    <img :src="data.imagen_fondo" :alt="data.titulo" />
                 </div>
             </div>
         </div>
@@ -60,9 +45,8 @@ const iconPlanta = "/images/flor.svg";
 const imgCenter = "/images/iso1.png";
 defineProps({
     data: {
-        type: Array,
-        required: true,
-        default: () => [],
+        type: Object,
+        default: () => null,
     },
 });
 </script>
