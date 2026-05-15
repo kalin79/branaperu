@@ -11,6 +11,10 @@ use App\Models\Product;
 
 use App\Models\Coupon;
 use App\Models\DiscountRule;
+use App\Mail\OrderConfirmed;
+use App\Mail\OrderConfirmedToAdmin;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Log;
 // use App\Models\District;
 // use App\Models\Local;
 
@@ -174,12 +178,69 @@ class OrderPaymentService
             // Actualizar estado de la orden
             if ($status === Payment::STATUS_APPROVED) {
                 $order->update(['status' => Order::STATUS_PREPARING]);
+                $this->sendOrderConfirmationIfNeeded($order);   // ← NUEVA LÍNEA
             } elseif (in_array($status, [Payment::STATUS_REJECTED, Payment::STATUS_CHARGEBACK])) {
                 $order->update(['status' => Order::STATUS_PENDING]); // o ABANDONED
             }
 
             return true;
         });
+    }
+
+    /**
+     * Envía correos de confirmación al cliente y al admin cuando una orden
+     * queda aprobada. Es idempotente: aunque el webhook de MP llegue varias
+     * veces, el correo se envía exactamente UNA vez gracias al chequeo
+     * atómico sobre `confirmation_email_sent_at`.
+     */
+    protected function sendOrderConfirmationIfNeeded(Order $order): void
+    {
+        // ✅ Race-safe: solo el primer hilo que pase este UPDATE ejecutará el envío.
+        $updated = Order::where('id', $order->id)
+            ->whereNull('confirmation_email_sent_at')
+            ->update(['confirmation_email_sent_at' => now()]);
+
+        if ($updated !== 1) {
+            // Otro proceso (o un webhook previo) ya envió el correo
+            return;
+        }
+
+        $fresh = $order->fresh(['items', 'district', 'pickupLocal']);
+
+        // === 1. Correo al cliente ===
+        try {
+            Mail::to($fresh->customer_email)->send(new OrderConfirmed($fresh));
+        } catch (\Throwable $e) {
+            Log::error('Error enviando confirmación de orden al cliente: ' . $e->getMessage(), [
+                'order_number' => $fresh->order_number,
+                'customer_email' => $fresh->customer_email,
+            ]);
+            // Revertimos el flag para reintentar en el próximo webhook
+            Order::where('id', $fresh->id)->update(['confirmation_email_sent_at' => null]);
+            return;
+        }
+
+        // === 2. Correo al admin ===
+        try {
+            $to = config('orders.admin_to');
+            $cc = array_filter(config('orders.admin_cc', []));
+            $bcc = array_filter(config('orders.admin_bcc', []));
+
+            if (!empty($to)) {
+                $mail = Mail::to($to);
+                if (!empty($cc))
+                    $mail->cc($cc);
+                if (!empty($bcc))
+                    $mail->bcc($bcc);
+
+                $mail->send(new OrderConfirmedToAdmin($fresh));
+            }
+        } catch (\Throwable $e) {
+            Log::error('Error enviando confirmación de orden al admin: ' . $e->getMessage(), [
+                'order_number' => $fresh->order_number,
+            ]);
+            // No revertimos el flag: el correo al cliente ya se envió, eso es lo crítico.
+        }
     }
 
     /**

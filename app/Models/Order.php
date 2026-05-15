@@ -73,6 +73,7 @@ class Order extends Model
         'accepted_marketing',
 
         'notes',
+        'confirmation_email_sent_at',   // ← AGREGAR
     ];
 
     protected $casts = [
@@ -88,6 +89,7 @@ class Order extends Model
         'accepted_privacy' => 'boolean',
         'accepted_marketing' => 'boolean',
         'birth_date' => 'date:Y-m-d',   // ← agregar
+        'confirmation_email_sent_at' => 'datetime',   // ← AGREGAR
     ];
 
     // ====================== ESTADOS DE LA ORDEN ======================
