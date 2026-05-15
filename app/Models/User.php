@@ -42,7 +42,7 @@ class User extends Authenticatable implements FilamentUser
         'email_verified_at' => 'datetime',
         'password' => 'hashed',
         'status' => 'string',
-        'birth_date' => 'date',  // ← NUEVO
+        'birth_date' => 'date:Y-m-d',   // ← el ":Y-m-d" es la clave
     ];
 
     // ====================== ESTADOS ======================

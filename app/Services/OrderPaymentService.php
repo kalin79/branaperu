@@ -38,6 +38,7 @@ class OrderPaymentService
                 'guest_email' => $orderData['guest_email'],
                 'guest_phone' => $orderData['guest_phone'],
                 'dni' => $orderData['dni'] ?? null,
+                'birth_date' => $orderData['birth_date'] ?? null,   // ← AGREGAR ESTA LÍNEA
 
                 // Delivery
                 'delivery_full_name' => $orderData['delivery_full_name'],

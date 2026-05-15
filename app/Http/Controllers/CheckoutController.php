@@ -57,6 +57,11 @@ class CheckoutController extends Controller
 
     public function process(Request $request)
     {
+        // Log::info('💡 Checkout process - birth_date recibido', [
+        //     'birth_date_raw' => $request->input('birth_date'),
+        //     'all_input' => $request->only(['birth_date', 'guest_email']),
+        // ]);
+
         $validated = $request->validate([
             'guest_name' => 'required|string|max:255',
             'guest_last_name' => 'required|string|max:255',
@@ -74,6 +79,10 @@ class CheckoutController extends Controller
             'final_total' => 'required|numeric|min:0',
             'items' => 'required|array',
         ]);
+
+        // Log::info('💡 Checkout process - birth_date validado', [
+        //     'birth_date' => $validated['birth_date'] ?? 'NULL',
+        // ]);
 
         $orderData = [
             'user_id' => auth()->id(),

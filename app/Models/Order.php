@@ -87,7 +87,7 @@ class Order extends Model
         'accepted_terms' => 'boolean',
         'accepted_privacy' => 'boolean',
         'accepted_marketing' => 'boolean',
-        'birth_date' => 'date', // ← NUEVO
+        'birth_date' => 'date:Y-m-d',   // ← agregar
     ];
 
     // ====================== ESTADOS DE LA ORDEN ======================
