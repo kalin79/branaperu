@@ -13,7 +13,7 @@ const props = defineProps({
     districts: Object, // { departamento: { provincia: [districts...] } }
     locals: Array,
     mpPublicKey: String,
-    defaultDeliveryCost: { type: [Number, String], default: 0 }, // ← NUEVO
+    defaultDeliveryCost: { type: [Number, String], default: 0 },
 });
 
 // ===== Estado del formulario =====
@@ -227,10 +227,47 @@ watch(
 );
 
 // ===== Pagar =====
+const scrollToFirstError = () => {
+    setTimeout(() => {
+        const firstErr = document.querySelector(".has-error");
+        firstErr?.scrollIntoView({ behavior: "smooth", block: "center" });
+    }, 100);
+};
+
+// Validación rápida en el front antes de pegar al backend
+const validateBeforeSubmit = () => {
+    const localErrors = {};
+
+    if (isPickup.value && !form.value.pickup_local_id) {
+        localErrors.pickup_local_id = [
+            "Selecciona la tienda donde recogerás tu pedido.",
+        ];
+    }
+
+    if (isDelivery.value && !form.value.delivery_district_id) {
+        localErrors.delivery_district_id = [
+            "Selecciona el distrito de entrega.",
+        ];
+    }
+
+    if (Object.keys(localErrors).length > 0) {
+        errors.value = localErrors;
+        globalError.value = "Por favor completa los campos requeridos.";
+        return false;
+    }
+    return true;
+};
+
 const handlePayClick = async () => {
-    submitting.value = true;
     errors.value = {};
     globalError.value = null;
+
+    if (!validateBeforeSubmit()) {
+        scrollToFirstError();
+        return;
+    }
+
+    submitting.value = true;
 
     try {
         // 1. Guardar info del cliente (con revalidación de cupón en el backend)
@@ -240,13 +277,12 @@ const handlePayClick = async () => {
         );
         if (updateRes.data.order) updateTotals(updateRes.data.order);
 
-        // ✅ NUEVO: si el cupón se quitó automáticamente, avisar y abortar
+        // Si el cupón se quitó automáticamente, avisar y abortar
         if (updateRes.data.coupon_removed) {
             couponError.value =
                 updateRes.data.coupon_message ||
                 "El cupón fue removido porque ya no aplica con los nuevos datos.";
             couponInput.value = "";
-            loading.value = false;
             return; // no avanzamos a crear la preferencia
         }
 
@@ -260,13 +296,12 @@ const handlePayClick = async () => {
             window.location.href = prefRes.data.init_point;
         }
     } catch (e) {
-        // ✅ NUEVO: si createPreference detecta cupón inválido, también mostrar aviso
-        if (err.response?.status === 422 && err.response.data?.coupon_removed) {
+        // Si createPreference detecta cupón inválido, también mostrar aviso
+        if (e.response?.status === 422 && e.response.data?.coupon_removed) {
             couponError.value =
-                err.response.data.error || "El cupón aplicado ya no es válido.";
-            if (err.response.data.order) updateTotals(err.response.data.order);
+                e.response.data.error || "El cupón aplicado ya no es válido.";
+            if (e.response.data.order) updateTotals(e.response.data.order);
             couponInput.value = "";
-            loading.value = false;
             return;
         }
         if (e.response?.status === 422) {
@@ -278,12 +313,9 @@ const handlePayClick = async () => {
             globalError.value =
                 e.response?.data?.error || "Error procesando el pago.";
         }
+        scrollToFirstError();
+    } finally {
         submitting.value = false;
-        // Scroll al primer error
-        setTimeout(() => {
-            const firstErr = document.querySelector(".has-error");
-            firstErr?.scrollIntoView({ behavior: "smooth", block: "center" });
-        }, 100);
     }
 };
 
@@ -770,12 +802,6 @@ const goEditCart = () => router.visit("/cart");
                                 <div v-else class="cuponHabilitadoContainer">
                                     <div>
                                         <p>✓ {{ totals.coupon_code }}</p>
-                                        <!-- <p
-                                            v-if="totals.coupon_name"
-                                            class="text-xs text-emerald-600"
-                                        >
-                                            {{ totals.coupon_name }}
-                                        </p> -->
                                     </div>
                                     <div>
                                         <button
@@ -862,7 +888,7 @@ const goEditCart = () => router.visit("/cart");
                                     <p>
                                         Total <br />
                                         <span
-                                            >Incluye S/ 29.14 de impuestos</span
+                                            >Incluye S/ 29.14 de impuestos</span
                                         >
                                     </p>
                                     <h2>
